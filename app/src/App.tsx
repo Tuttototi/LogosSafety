@@ -12,9 +12,10 @@ import AuditLog from "@/pages/AuditLog";
 import ImportExport from "@/pages/ImportExport";
 import Microclima from "@/pages/Microclima";
 import Login from "@/pages/Login";
+import Segnalazioni from "@/pages/Segnalazioni";
 import NotFound from "@/pages/NotFound";
 
-function LayoutWrapper({ children }: { children: React.ReactNode }) {
+function LayoutWrapper({ children }: Readonly<{ children: React.ReactNode }>) {
   return <AppLayout>{children}</AppLayout>;
 }
 
@@ -67,6 +68,14 @@ export default function App() {
         element={
           <LayoutWrapper>
             <Scadenziario />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/segnalazioni"
+        element={
+          <LayoutWrapper>
+            <Segnalazioni />
           </LayoutWrapper>
         }
       />

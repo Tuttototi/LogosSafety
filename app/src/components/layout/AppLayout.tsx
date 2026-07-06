@@ -41,6 +41,7 @@ const navItems = [
   { path: "/sorveglianza", label: "Sorveglianza Sanitaria", icon: Stethoscope },
   { path: "/mansioni", label: "Mansioni", icon: Briefcase },
   { path: "/scadenziario", label: "Scadenziario", icon: CalendarClock },
+  { path: "/segnalazioni", label: "Segnalazioni", icon: FileText },
   { path: "/microclima", label: "Microclima", icon: Thermometer },
   { path: "/documenti", label: "Documenti", icon: FileText },
   { path: "/impostazioni", label: "Impostazioni", icon: Settings },
@@ -56,7 +57,8 @@ const roleLabels: Record<string, { label: string; icon: typeof ShieldCheck; colo
   sola_lettura: { label: "Sola Lettura", icon: BookOpen, color: "bg-gray-100 text-gray-600" },
 };
 
-function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => void }>) {
+  const { collapsed, onNavigate } = props;
   const location = useLocation();
   const { user } = useAuth();
   const { data: stats } = trpc.dashboard.stats.useQuery(undefined, { enabled: !!user });
@@ -100,7 +102,8 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
   );
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout(props: Readonly<{ children: React.ReactNode }>) {
+  const { children } = props;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
