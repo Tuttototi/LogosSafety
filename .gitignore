@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+app/node_modules/
+
+# Build
+dist/
+app/dist/
+
+# Environment
+.env
+.env.*
+app/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.history/
+.vscode/
+
+# Logs
+*.log
+
+# File temporanei del progetto
+test_import.xlsx
+preview_import.png
+preview_step2.png
+preview_step3.png

@@ -1,0 +1,39 @@
+# Product Backlog LogosSafety
+
+**Ultimo aggiornamento:** 24 giugno 2026
+
+## Completato
+
+| Area | Task | Stato |
+|---|---|---|
+| Aziende | Preparare Import Excel con template coerente, validazione frontend/backend, gestione duplicati e test automatici | Completato |
+
+## P0 — Blocco rilascio
+
+| Area | Task | Motivazione | Stato |
+|---|---|---|---|
+| Sicurezza | Completare matrice permessi per modulo e azione | Necessario per least privilege commerciale | Aperto |
+| Sicurezza | Applicare scope azienda/sede/commessa agli endpoint core | Necessario per isolamento dati SaaS | Aperto |
+| Database | Aggiungere vincoli univoci e FK core, inclusi identificativi Aziende | Riduce duplicati e record orfani | Aperto |
+| Import/Export | Rendere gli import atomici con transazioni e rollback batch | Evita import parziali incoerenti | Aperto |
+| Import/Export | Persistire import batch, righe, errori ed esiti | Necessario per auditabilità operativa | Aperto |
+
+## P1 — Core Prodotto
+
+| Area | Task | Motivazione | Stato |
+|---|---|---|---|
+| Aziende | Aggiungere controlli DB su duplicati Partita IVA/Codice Fiscale/nome | Completa la protezione oltre la validazione applicativa | Aperto |
+| Aziende | Registrare audit diff campo per campo su update/import | Migliora tracciabilità cliente | Aperto |
+| Sedi | Completare UI create/edit | Completa CRUD Sedi | Aperto |
+| Lavoratori | Completare UI CRUD e import/export coerenti | Priorità prodotto successiva | Aperto |
+| Import/Export | Implementare import/export Mansioni, Corsi, Commesse e cataloghi | Chiude gap wizard attuale | Aperto |
+
+## P2 — Evoluzione
+
+| Area | Task | Motivazione | Stato |
+|---|---|---|---|
+| Dashboard | Collegare KPI e drill-down a filtri azienda/sede | Usabilità direzionale | Aperto |
+| Documentale | Spostare file su storage privato con URL firmate | Sicurezza e scalabilità | Aperto |
+| Microclima | Implementare API e persistenza reale | Modulo prioritario avanzato | Aperto |
+| OT23 | Implementare workflow evidenze e dossier | Valore commerciale | Aperto |
+| Notifiche | Implementare engine con outbox/retry | Alert proattivi | Aperto |

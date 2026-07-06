@@ -1,0 +1,65 @@
+# Changelog LogosSafety
+
+## 24 giugno 2026
+
+### Aziende — preparazione Import Excel
+
+- Allineata la validazione backend dell'import Aziende alla validazione CRUD esistente.
+- Resi obbligatori nel template/preview Excel i campi anagrafici richiesti dal form Aziende: indirizzo, città, provincia, CAP ed email.
+- Aggiunto controllo Excel e backend per richiedere almeno uno tra Partita IVA e Codice Fiscale.
+- Validati PEC e campo Cooperativa (`SI/NO`, `true/false`, `1/0`) prima dell'import.
+- Migliorata la gestione duplicati Aziende su nome, Partita IVA o Codice Fiscale.
+- Rimossi log console di righe e payload importati dal wizard Excel.
+- Aggiunti test automatici sulla validazione dell'import Aziende.
+
+## 19 giugno 2026
+
+### Security — segregazione dati clinici delle visite
+
+- Separati gli endpoint sanitari operativi dagli endpoint clinici.
+- `medical.list` restituisce esclusivamente tipo visita, stato, date/scadenze e riferimenti a lavoratore, azienda, sede e mansione.
+- Introdotto `medical.clinicalList` per Admin, Responsabile Sicurezza e Medico Competente.
+- Separati `medical.update` operativo e `medical.updateClinical` per giudizio, limitazioni, prescrizioni, protocollo, note e allegati.
+- Cancellazione e import visite limitati ai ruoli clinici.
+- Rimossi i campi clinici dai DTO `workers.getById` e `compliance.checkWorker`.
+- Aggiornata la Sorveglianza Sanitaria per caricare i dati clinici solo per i ruoli autorizzati.
+- Nascosto l'import visite ai ruoli non clinici.
+- Aggiunti test RBAC sulla policy e sugli endpoint clinici.
+
+### Security — protezione contenuti documentali sensibili
+
+- `documents.list` restituisce esclusivamente metadati e non include più `fileUrl`, base64 o contenuto del file.
+- Introdotto `documents.access`, endpoint backend dedicato per apertura e download.
+- Ogni accesso verifica nuovamente ruolo e classificazione del documento lato backend.
+- Documenti sanitari accessibili solo ad Admin, Responsabile Sicurezza e Medico Competente.
+- Documenti di identità e patenti accessibili solo ad Admin e Responsabile Sicurezza.
+- Aperture e download registrati nell'audit log con azioni `view` e `download`.
+- Aggiornata la pagina Documenti per recuperare il contenuto solo al momento dell'accesso.
+- Aggiunti test automatici della matrice autorizzativa documentale.
+
+### Security — rimozione vulnerabilità SheetJS in produzione
+
+- Aggiornata la dipendenza `xlsx` dalla versione npm `0.18.5` a SheetJS CE `0.20.3`, distribuita dal CDN ufficiale SheetJS.
+- Mantenute invariate le API di import/export e il supporto ai file `.xlsx` e `.xls`.
+- Verificate lettura dei workbook campione e generazione/lettura di un export in memoria.
+- `npm audit --omit=dev` non rileva più vulnerabilità.
+- Nessuna modifica al codice applicativo.
+
+## 18 giugno 2026
+
+### Security — revoca sessioni legacy e protezione artefatti
+
+- Ruotato il formato di sessione a `logos_sid_v2`.
+- Introdotta la versione obbligatoria delle sessioni (`version: 2`), invalidando tutti i JWT precedenti, incluso il token esposto nel repository.
+- Aggiunti issuer, audience, identificatore univoco `jti` e durata massima di 12 ore ai nuovi token.
+- Bloccata l'autenticazione degli utenti disattivati.
+- Il login e il logout eliminano anche il cookie legacy `kimi_sid`.
+- Rimosso `app/cookiejar.txt` dal working tree.
+- Aggiunti pattern `.gitignore` per cookie jar e artefatti di sessione.
+- Aggiunto il gate `npm run security:secrets`, eseguito automaticamente da `npm run check`.
+- Aggiunti test automatici per token correnti, token legacy e audience non valida.
+
+### Note operative
+
+- La cronologia Git locale contiene ancora il file nel commit iniziale `6f88fc3`.
+- La riscrittura della history e l'eventuale aggiornamento del repository remoto devono essere eseguiti in un task Git dedicato e coordinato; nessun remote è configurato nel checkout corrente.

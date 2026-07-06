@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>CFL – Segnalazioni</title>
+  <script>
+    const logged = localStorage.getItem("cfl_logged");
+    const role = localStorage.getItem("cfl_role");
+
+    if (!logged) {
+      window.location.href = "FRONTEND/pages/login.html";
+    } else {
+      switch (role) {
+        case "admin":
+          window.location.href = "FRONTEND/pages/dashboard_admin.html";
+          break;
+        case "rspp":
+          window.location.href = "FRONTEND/pages/dashboard_rspp.html";
+          break;
+        case "sicurezza":
+          window.location.href = "FRONTEND/pages/dashboard_sicurezza.html";
+          break;
+        default:
+          window.location.href = "FRONTEND/pages/dashboard_segnalatore.html";
+      }
+    }
+  </script>
+</head>
+<body></body>
+</html>

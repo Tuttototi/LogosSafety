@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestione Segnalazioni – CFL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* REGOLA D'ORO: MINIATURE → ZOOM */
+    .preview {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: zoom-in;
+    }
+    .preview:hover {
+      transform: scale(2);
+      z-index: 50;
+      box-shadow: 0 10px 25px rgba(0,0,0,.4);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gray-100 flex">
+
+<!-- SIDEBAR -->
+<aside class="w-64 min-h-screen bg-red-700 text-white flex flex-col">
+  <div class="bg-white p-4 flex justify-center">
+    <img src="../../assets/logo cfl.png" class="w-full object-contain" alt="Logo CFL">
+  </div>
+
+  <nav class="flex-1 mt-6">
+    <ul class="space-y-2 text-lg">
+
+      <li>
+        <a href="dashboard_admin.html"
+           class="block px-6 py-3 hover:bg-red-800 rounded-l-full transition">
+          Dashboard
+        </a>
+      </li>
+
+      <li>
+        <a href="utenti.html"
+           class="block px-6 py-3 hover:bg-red-800 rounded-l-full transition">
+          Gestione Utenti
+        </a>
+      </li>
+
+      <li>
+        <a href="appalti.html"
+           class="block px-6 py-3 hover:bg-red-800 rounded-l-full transition">
+          Gestione Appalti
+        </a>
+      </li>
+
+      <li>
+        <a href="clienti.html"
+           class="block px-6 py-3 hover:bg-red-800 rounded-l-full transition">
+          Gestione Clienti
+        </a>
+      </li>
+
+      <!-- ATTIVA -->
+      <li>
+        <a href="segnalazioni.html"
+           class="block px-6 py-3 bg-white text-red-700 font-semibold rounded-l-full shadow-md">
+          Gestione Segnalazioni
+        </a>
+      </li>
+
+    </ul>
+  </nav>
+</aside>
+
+
+<!-- MAIN -->
+<main class="flex-1 p-6">
+
+  <!-- HEADER -->
+  <header class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Gestione Segnalazioni</h1>
+  </header>
+
+  <!-- TABELLA -->
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b">
+        <tr class="text-left text-gray-600">
+          <th class="px-4 py-3">Data</th>
+          <th class="px-4 py-3">Appalto</th>
+          <th class="px-4 py-3">Segnalazione</th>
+          <th class="px-4 py-3">Allegati</th>
+          <th class="px-4 py-3">Stato</th>
+          <th class="px-4 py-3 text-right">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr class="border-b">
+          <td class="px-4 py-3">18/12/2024</td>
+          <td class="px-4 py-3">Milano</td>
+          <td class="px-4 py-3">Rischio impigliamento rulliera</td>
+
+          <!-- ALLEGATI -->
+          <td class="px-4 py-3 space-x-2">
+            <img src="../assets/demo_foto.jpg"
+                 class="inline-block w-10 h-10 object-cover rounded preview">
+            <a href="../assets/demo.pdf"
+               class="inline-block w-10 h-10 bg-gray-200 rounded flex items-center justify-center preview"
+               target="_blank">PDF</a>
+          </td>
+
+          <td class="px-4 py-3">
+            <span class="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700">
+              In lavorazione
+            </span>
+          </td>
+
+          <td class="px-4 py-3 text-right">
+            <button
+              onclick="apriDettaglio()"
+              class="px-3 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200">
+              Dettaglio
+            </button>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- MODALE DETTAGLIO -->
+<div id="modalDettaglio"
+     class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+  <div class="bg-white w-full max-w-2xl rounded-xl shadow-xl p-6">
+    <h2 class="text-xl font-bold mb-4">Dettaglio Segnalazione</h2>
+
+    <p class="mb-3"><strong>Descrizione:</strong> rischio di impigliamento durante il lavoro su rulliera.</p>
+
+    <div class="flex gap-3 mb-4">
+      <img src="../assets/demo_foto.jpg"
+           class="w-24 h-24 object-cover rounded preview">
+      <img src="../assets/demo_foto.jpg"
+           class="w-24 h-24 object-cover rounded preview">
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <button
+        onclick="chiudiDettaglio()"
+        class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+        Chiudi
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- JS -->
+<script>
+  function apriDettaglio() {
+    document.getElementById('modalDettaglio').classList.remove('hidden');
+  }
+  function chiudiDettaglio() {
+    document.getElementById('modalDettaglio').classList.add('hidden');
+  }
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nuova Segnalazione – Logos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
+      <!-- LOGO -->
+      <div class="flex justify-center mb-6">
+        <img src="../assets/LogoLogos.png" alt="Logos" class="h-10" />
+      </div>
+      <!-- TITOLO -->
+      <h1 class="text-xl font-bold text-center text-red-600 mb-6">
+        Nuova Segnalazione
+      </h1>
+
+      <form class="space-y-4">
+        <!-- APPALTO -->
+        <div>
+          <label class="block text-sm font-medium mb-1"> Appalto * </label>
+          <select
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+          >
+            <!-- mock statico -->
+            <option>Seleziona appalto</option>
+            <option>Appalto Milano</option>
+            <option>Appalto Torino</option>
+            <option>Appalto Bologna</option>
+          </select>
+        </div>
+
+        <!-- TITOLO -->
+        <div>
+          <label class="block text-sm font-medium mb-1"> Titolo * </label>
+          <input
+            type="text"
+            placeholder="Es. Transenna danneggiata"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+          />
+        </div>
+
+        <!-- DESCRIZIONE -->
+        <div>
+          <label class="block text-sm font-medium mb-1"> Descrizione * </label>
+          <textarea
+            rows="4"
+            placeholder="Descrivi il problema riscontrato"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+          ></textarea>
+        </div>
+
+        <!-- PRIORITÀ -->
+        <div>
+          <label class="block text-sm font-medium mb-1"> Priorità </label>
+          <select
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
+          >
+            <option>Media</option>
+            <option>Bassa</option>
+            <option>Alta</option>
+          </select>
+        </div>
+
+        <!-- FOTO / ALLEGATI -->
+        <div>
+          <label class="block text-sm font-medium mb-1">
+            Foto / Allegati
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            class="w-full text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-red-600 file:text-white hover:file:bg-red-700"
+          />
+        </div>
+
+        <!-- INVIO -->
+        <button
+          type="submit"
+          class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg mt-4"
+        >
+          Invia Segnalazione
+        </button>
+      </form>
+    </div>
+  </body>
+</html>

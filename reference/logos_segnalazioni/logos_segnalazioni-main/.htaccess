@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Se il file o la cartella esiste, lasciali passare
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Tutto il resto va a index.php
+RewriteRule ^ index.php [L]
