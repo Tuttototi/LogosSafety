@@ -21,6 +21,7 @@ import {
   FileSpreadsheet,
   Menu,
   Thermometer,
+  type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranding } from "@/hooks/useBranding";
@@ -33,8 +34,23 @@ import { trpc } from "@/providers/trpc";
 
 const AUDIT_ROLES = new Set(["admin", "responsabile_sicurezza", "auditor"]);
 const IMPORT_ROLES = new Set(["admin", "responsabile_sicurezza", "operatore_sicurezza", "medico_competente", "referente_commessa", "auditor", "sola_lettura"]);
+const SEGNALAZIONI_SEGNALATORE_URL = "/logos_segnalazioni/app/App_Segnalatore.html";
+const SEGNALAZIONI_URL_BY_ROLE: Record<string, string> = {
+  admin: "/logos_segnalazioni/pages/dashboard_admin.php",
+  responsabile_sicurezza: "/logos_segnalazioni/pages/dashboard_rspp.php",
+  operatore_sicurezza: "/logos_segnalazioni/pages/dashboard_sicurezza.php",
+  referente_commessa: SEGNALAZIONI_SEGNALATORE_URL,
+  segnalatore: SEGNALAZIONI_SEGNALATORE_URL,
+};
 
-const navItems = [
+type SidebarItem = {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+  external?: boolean;
+};
+
+const navItems: SidebarItem[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/dipendenti", label: "Dipendenti", icon: Users },
   { path: "/formazione", label: "Formazione", icon: GraduationCap },
@@ -47,7 +63,7 @@ const navItems = [
   { path: "/impostazioni", label: "Impostazioni", icon: Settings },
 ];
 
-const roleLabels: Record<string, { label: string; icon: typeof ShieldCheck; color: string }> = {
+const roleLabels: Record<string, { label: string; icon: LucideIcon; color: string }> = {
   admin: { label: "Admin", icon: Shield, color: "bg-red-100 text-red-700" },
   responsabile_sicurezza: { label: "Resp. Sicurezza", icon: ShieldCheck, color: "bg-blue-100 text-blue-700" },
   operatore_sicurezza: { label: "Operatore H\u0026S", icon: ClipboardCheck, color: "bg-green-100 text-green-700" },
@@ -57,37 +73,42 @@ const roleLabels: Record<string, { label: string; icon: typeof ShieldCheck; colo
   sola_lettura: { label: "Sola Lettura", icon: BookOpen, color: "bg-gray-100 text-gray-600" },
 };
 
+function getSegnalazioniUrl(role?: string) {
+  if (!role) return SEGNALAZIONI_SEGNALATORE_URL;
+  return SEGNALAZIONI_URL_BY_ROLE[role] ?? SEGNALAZIONI_SEGNALATORE_URL;
+}
+
 function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => void }>) {
   const { collapsed, onNavigate } = props;
   const location = useLocation();
   const { user } = useAuth();
   const { data: stats } = trpc.dashboard.stats.useQuery(undefined, { enabled: !!user });
+  const role = user?.role;
 
   const items = useMemo(() => {
     const base = [
-      ...navItems,
-      ...(user && AUDIT_ROLES.has(user.role) ? [{ path: "/audit", label: "Audit Log", icon: BookOpen }] : []),
-      ...(user && IMPORT_ROLES.has(user.role) ? [{ path: "/import-export", label: "Import / Export", icon: FileSpreadsheet }] : []),
+      ...navItems.map((item) =>
+        item.path === "/segnalazioni"
+          ? { ...item, path: getSegnalazioniUrl(role), external: true }
+          : item
+      ),
+      ...(role && AUDIT_ROLES.has(role) ? [{ path: "/audit", label: "Audit Log", icon: BookOpen }] : []),
+      ...(role && IMPORT_ROLES.has(role) ? [{ path: "/import-export", label: "Import / Export", icon: FileSpreadsheet }] : []),
     ];
     return base;
-  }, [user]);
+  }, [role]);
 
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">
       {items.map((item) => {
-        const isActive = location.pathname === item.path;
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            title={collapsed ? item.label : undefined}
-            onClick={onNavigate}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
-              isActive
-                ? "bg-white/15 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]"
-                : "text-white/90 hover:bg-white/10"
-            }`}
-          >
+        const isActive = !item.external && location.pathname === item.path;
+        const className = `flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all ${
+          isActive
+            ? "bg-white/15 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]"
+            : "text-white/90 hover:bg-white/10"
+        }`;
+        const content = (
+          <>
             <item.icon className="h-5 w-5 shrink-0" />
             {!collapsed && <span className="truncate">{item.label}</span>}
             {!collapsed && item.path === "/scadenziario" && stats && stats.openAlerts > 0 && (
@@ -95,6 +116,32 @@ function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => voi
                 {stats.openAlerts}
               </span>
             )}
+          </>
+        );
+
+        if (item.external) {
+          return (
+            <a
+              key={item.path}
+              href={item.path}
+              title={collapsed ? item.label : undefined}
+              onClick={onNavigate}
+              className={className}
+            >
+              {content}
+            </a>
+          );
+        }
+
+        return (
+          <Link
+            key={item.path}
+            to={item.path}
+            title={collapsed ? item.label : undefined}
+            onClick={onNavigate}
+            className={className}
+          >
+            {content}
           </Link>
         );
       })}
