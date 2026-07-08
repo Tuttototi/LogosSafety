@@ -13,6 +13,7 @@ import ImportExport from "@/pages/ImportExport";
 import Microclima from "@/pages/Microclima";
 import Login from "@/pages/Login";
 import Segnalazioni from "@/pages/Segnalazioni";
+import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp";
 import NotFound from "@/pages/NotFound";
 
 function LayoutWrapper({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -76,6 +77,14 @@ export default function App() {
         element={
           <LayoutWrapper>
             <Segnalazioni />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/segnalazioni/app"
+        element={
+          <LayoutWrapper>
+            <SegnalatoreApp variant="page" />
           </LayoutWrapper>
         }
       />

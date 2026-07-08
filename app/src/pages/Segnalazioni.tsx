@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, BadgeCheck, CalendarDays, CheckCircle2, FileText, ListFilter, PlusCircle, Search, Sparkles, Upload, X } from "lucide-react";
+import { Link } from "react-router";
+import { AlertTriangle, BadgeCheck, CalendarDays, CheckCircle2, FileText, ListFilter, Search, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { FloatingSmartphone } from "@/components/reports/FloatingSmartphone";
-import { SegnalatoreMobileApp } from "@/components/reports/SegnalatoreMobileApp";
-import { toast } from "sonner";
+import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp";
 
 type ReportStatus = "Nuova" | "In lavorazione" | "In attesa" | "Richiesta chiusura" | "Chiusa";
 type ReportPriority = "Bassa" | "Media" | "Alta" | "Critica";
@@ -89,21 +88,12 @@ const priorityColors: Record<ReportPriority, string> = {
 };
 
 export default function Segnalazioni() {
-  const [reports, setReports] = useState(initialReports);
+  const [reports] = useState(initialReports);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ReportStatus>("all");
   const [priorityFilter, setPriorityFilter] = useState<"all" | ReportPriority>("all");
   const [selectedReport, setSelectedReport] = useState<ReportItem>(initialReports[0]);
   const [showPhone, setShowPhone] = useState(false);
-  const [draft, setDraft] = useState({
-    title: "",
-    description: "",
-    category: "Pericolo" as ReportCategory,
-    priority: "Alta" as ReportPriority,
-    location: "",
-    reporter: "",
-  });
-  const [attachments, setAttachments] = useState<string[]>([]);
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
@@ -113,41 +103,6 @@ export default function Segnalazioni() {
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [priorityFilter, reports, search, statusFilter]);
-
-  const handleCreateReport = () => {
-    if (!draft.title.trim() || !draft.description.trim()) {
-      toast.error("Compila titolo e descrizione della segnalazione");
-      return;
-    }
-
-    const newReport: ReportItem = {
-      id: Date.now(),
-      code: `SR-2026-${String(reports.length + 1).padStart(3, "0")}`,
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      category: draft.category,
-      priority: draft.priority,
-      status: "Nuova",
-      location: draft.location.trim() || "Area non specificata",
-      createdAt: "Oggi",
-      reporter: draft.reporter.trim() || "Utente corrente",
-      attachments: attachments.length ? attachments : ["allegato.pdf"],
-      evidence: ["Segnalazione ricevuta", "In attesa di presa in carico"],
-    };
-
-    setReports((current) => [newReport, ...current]);
-    setSelectedReport(newReport);
-    setDraft({ title: "", description: "", category: "Pericolo", priority: "Alta", location: "", reporter: "" });
-    setAttachments([]);
-    toast.success("Segnalazione creata con successo");
-  };
-
-  const handleAttachmentSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files ?? []).map((file) => file.name);
-    if (!selected.length) return;
-    setAttachments((current) => [...current, ...selected]);
-    event.target.value = "";
-  };
 
   const handlePhoneToggle = () => {
     setShowPhone((current) => !current);
@@ -161,34 +116,6 @@ export default function Segnalazioni() {
     setPriorityFilter(event.target.value as "all" | ReportPriority);
   };
 
-  const handleRemoveAttachment = (attachment: string) => {
-    setAttachments((current) => current.filter((item) => item !== attachment));
-  };
-
-  const handleDraftTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDraft((current) => ({ ...current, title: event.target.value }));
-  };
-
-  const handleDraftDescriptionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDraft((current) => ({ ...current, description: event.target.value }));
-  };
-
-  const handleDraftCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setDraft((current) => ({ ...current, category: event.target.value as ReportCategory }));
-  };
-
-  const handleDraftPriorityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setDraft((current) => ({ ...current, priority: event.target.value as ReportPriority }));
-  };
-
-  const handleDraftLocationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDraft((current) => ({ ...current, location: event.target.value }));
-  };
-
-  const handleDraftReporterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDraft((current) => ({ ...current, reporter: event.target.value }));
-  };
-
   return (
     <div className="space-y-6">
       <div className="rounded-[28px] border border-red-100 bg-gradient-to-br from-[#b91c1c] via-[#c2410c] to-[#dc2626] p-6 text-white shadow-[0_20px_60px_rgba(185,28,28,0.2)]">
@@ -198,9 +125,14 @@ export default function Segnalazioni() {
             <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Gestisci segnalazioni, stati e allegati da un unico centro operativo.</h1>
             <p className="mt-3 text-sm leading-6 text-red-50 sm:text-base">Il flusso è stato ricostruito in React con ricerca, filtri, dettaglio e un telefono mobile simulato per il percorso operativo.</p>
           </div>
-          <Button variant="secondary" className="w-full bg-white/15 text-white hover:bg-white/20 sm:w-auto" onClick={handlePhoneToggle}>
-            {showPhone ? "Nascondi Smartphone" : "Smartphone"}
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button variant="secondary" className="w-full bg-white/15 text-white hover:bg-white/20 sm:w-auto" onClick={handlePhoneToggle}>
+              {showPhone ? "Nascondi Smartphone" : "Smartphone"}
+            </Button>
+            <Button asChild variant="secondary" className="w-full bg-white text-red-700 hover:bg-red-50 sm:w-auto">
+              <Link to="/segnalazioni/app">Apri App Segnalatore</Link>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -365,50 +297,14 @@ export default function Segnalazioni() {
 
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold text-slate-900">Nuova segnalazione</CardTitle>
+              <CardTitle className="text-base font-semibold text-slate-900">App Segnalatore</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Input placeholder="Titolo della segnalazione" value={draft.title} onChange={handleDraftTitleChange} />
-              <Textarea placeholder="Descrizione del rischio o dell’anomalia" value={draft.description} onChange={handleDraftDescriptionChange} />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="sr-only" htmlFor="report-category">Categoria della segnalazione</label>
-                <select id="report-category" className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none" value={draft.category} onChange={handleDraftCategoryChange}>
-                  <option value="Pericolo">Pericolo</option>
-                  <option value="Infortuni">Infortuni</option>
-                  <option value="Attrezzature">Attrezzature</option>
-                  <option value="Ambiente">Ambiente</option>
-                  <option value="Procedura">Procedura</option>
-                </select>
-                <label className="sr-only" htmlFor="report-priority">Priorità della segnalazione</label>
-                <select id="report-priority" className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none" value={draft.priority} onChange={handleDraftPriorityChange}>
-                  <option value="Bassa">Bassa</option>
-                  <option value="Media">Media</option>
-                  <option value="Alta">Alta</option>
-                  <option value="Critica">Critica</option>
-                </select>
-              </div>
-              <Input placeholder="Luogo / area interessata" value={draft.location} onChange={handleDraftLocationChange} />
-              <Input placeholder="Referente o operatore" value={draft.reporter} onChange={handleDraftReporterChange} />
-              <div className="rounded-2xl border border-dashed border-slate-300 p-3 text-sm text-slate-600">
-                <div className="flex flex-wrap gap-2">
-                  {attachments.map((attachment) => (
-                    <span key={attachment} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
-                      {attachment}
-                      <button type="button" title={`Rimuovi allegato ${attachment}`} className="text-slate-400 hover:text-slate-700" onClick={() => handleRemoveAttachment(attachment)}>
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-                  <Upload className="h-4 w-4" />
-                  Allegati o foto
-                  <input type="file" multiple className="hidden" onChange={handleAttachmentSelection} />
-                </label>
-              </div>
-              <Button className="w-full gap-2" onClick={handleCreateReport}>
-                <PlusCircle className="h-4 w-4" />
-                Crea segnalazione
+              <p className="text-sm leading-6 text-slate-600">
+                La creazione segnalazioni e' centralizzata nella nuova App Segnalatore React riusabile.
+              </p>
+              <Button asChild className="w-full">
+                <Link to="/segnalazioni/app">Apri App Segnalatore</Link>
               </Button>
             </CardContent>
           </Card>
@@ -417,7 +313,7 @@ export default function Segnalazioni() {
 
       {showPhone && (
         <FloatingSmartphone onClose={() => setShowPhone(false)}>
-          <SegnalatoreMobileApp />
+          <SegnalatoreApp variant="mobile" />
         </FloatingSmartphone>
       )}
     </div>

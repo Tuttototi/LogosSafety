@@ -13,6 +13,8 @@
 - Inserito il logo reale Logos nella UI mobile segnalatore usando l'asset pubblico `/assets/LogoLogos.png`.
 - Sostituito il simbolo provvisorio della sidebar con il logo reale Logos.
 - Configurata la favicon reale LogosSafety tramite `/assets/favicon.ico`.
+- Creata `SegnalatoreApp` React riusabile con form, tab, lista mock e azioni UI-only per ruolo.
+- Aggiunta route interna `/segnalazioni/app` e collegato lo smartphone floating alla stessa App Segnalatore.
 
 ## 24 giugno 2026
 
