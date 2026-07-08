@@ -12,6 +12,7 @@
 - Migliorato lo smartphone floating con schermo bianco uniforme e drag & drop tramite Pointer Events.
 - Inserito il logo reale Logos nella UI mobile segnalatore usando l'asset pubblico `/assets/LogoLogos.png`.
 - Sostituito il simbolo provvisorio della sidebar con il logo reale Logos.
+- Configurata la favicon reale LogosSafety tramite `/assets/favicon.ico`.
 
 ## 24 giugno 2026
 

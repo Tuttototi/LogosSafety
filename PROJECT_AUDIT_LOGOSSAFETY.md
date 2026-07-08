@@ -16,6 +16,7 @@ Il modulo Segnalazioni ha assorbito in React la UI segnalatore mobile che prima 
 - lo smartphone floating mantiene schermo bianco uniforme e supporta trascinamento con Pointer Events dalla cornice superiore;
 - la UI mobile usa il logo reale Logos tramite asset pubblico `/assets/LogoLogos.png`;
 - la sidebar principale usa il logo reale Logos al posto del simbolo provvisorio;
+- la favicon browser usa l'asset reale `/assets/favicon.ico`;
 - il placeholder diagnostico `/logos_segnalazioni/index.html` resta disponibile ma non è più la destinazione del menu;
 - rimane aperta l'integrazione backend LogosSafety per persistenza, audit, permessi, allegati e workflow reale.
 
