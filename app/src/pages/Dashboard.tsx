@@ -25,6 +25,7 @@ const quickLinks = [
 export default function Dashboard() {
   const { data: stats } = trpc.dashboard.stats.useQuery();
   const { data: deadlines } = trpc.dashboard.upcomingDeadlines.useQuery();
+  const certificateDeadlines = deadlines?.certificateDeadlines ?? [];
 
   return (
     <div className="space-y-6">
@@ -167,18 +168,18 @@ export default function Dashboard() {
             <CardTitle className="text-base font-semibold text-slate-900">Scadenze prossime</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {deadlines?.slice(0, 4).map((deadline) => (
+            {certificateDeadlines.slice(0, 4).map((deadline) => (
               <div key={deadline.id} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                 <div className="mt-0.5 rounded-full bg-amber-100 p-2 text-amber-600">
                   <Calendar className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-slate-900">{deadline.title}</p>
-                  <p className="mt-1 text-sm text-slate-500">{deadline.date}</p>
+                  <p className="text-sm font-semibold text-slate-900">{deadline.courseName}</p>
+                  <p className="mt-1 text-sm text-slate-500">{deadline.expiryDate}</p>
                 </div>
               </div>
             ))}
-            {!deadlines?.length && (
+            {certificateDeadlines.length === 0 && (
               <div className="rounded-2xl border border-dashed border-slate-200 px-3 py-4 text-sm text-slate-500">
                 Nessuna scadenza imminente in questo momento.
               </div>
