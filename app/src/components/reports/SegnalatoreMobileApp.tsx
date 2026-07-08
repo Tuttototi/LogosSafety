@@ -13,8 +13,8 @@ export function SegnalatoreMobileApp() {
   };
 
   return (
-    <div className="flex h-full min-h-0 items-start justify-center overflow-y-auto bg-gray-100 px-4 py-6">
-      <div className="w-full rounded-2xl bg-white p-5 shadow-xl">
+    <div className="flex h-full min-h-0 items-start justify-center overflow-y-auto bg-white px-4 py-6">
+      <div className="w-full rounded-2xl bg-white p-5">
         <h1 className="mb-6 text-center text-xl font-bold text-red-600">
           Nuova Segnalazione
         </h1>
