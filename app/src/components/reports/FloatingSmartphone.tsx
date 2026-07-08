@@ -114,7 +114,7 @@ export function FloatingSmartphone({ children, onClose }: Readonly<FloatingSmart
             </button>
           )}
 
-          <div className="min-h-0 flex-1 overflow-hidden rounded-[2.4rem] bg-white">
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto rounded-[2.4rem] bg-white [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {children}
           </div>
         </div>
