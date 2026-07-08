@@ -15,6 +15,10 @@ export function SegnalatoreMobileApp() {
   return (
     <div className="flex h-full min-h-0 items-start justify-center overflow-y-auto bg-white px-4 py-6">
       <div className="w-full rounded-2xl bg-white p-5">
+        <div className="mb-6 flex justify-center">
+          <img src="/assets/LogoLogos.png" alt="Logos" className="h-10 w-auto object-contain" />
+        </div>
+
         <h1 className="mb-6 text-center text-xl font-bold text-red-600">
           Nuova Segnalazione
         </h1>

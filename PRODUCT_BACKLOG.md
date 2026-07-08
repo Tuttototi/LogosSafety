@@ -6,6 +6,7 @@
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Usare asset logo Logos nella UI mobile segnalatore React | Completato |
 | Segnalazioni | Migliorare smartphone floating con schermo bianco uniforme e drag & drop | Completato |
 | Segnalazioni | Assorbire la UI segnalatore mobile statica in React dentro lo smartphone floating | Completato |
 | Aziende | Preparare Import Excel con template coerente, validazione frontend/backend, gestione duplicati e test automatici | Completato |
