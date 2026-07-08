@@ -34,13 +34,14 @@ import { trpc } from "@/providers/trpc";
 
 const AUDIT_ROLES = new Set(["admin", "responsabile_sicurezza", "auditor"]);
 const IMPORT_ROLES = new Set(["admin", "responsabile_sicurezza", "operatore_sicurezza", "medico_competente", "referente_commessa", "auditor", "sola_lettura"]);
-const SEGNALAZIONI_SEGNALATORE_URL = "/logos_segnalazioni/app/App_Segnalatore.html";
+const SEGNALAZIONI_DIAGNOSTIC_URL = "/logos_segnalazioni/index.html";
+// Temporary diagnostic mapping: restore the role-specific PHP targets when the real logos_segnalazioni module is mounted.
 const SEGNALAZIONI_URL_BY_ROLE: Record<string, string> = {
-  admin: "/logos_segnalazioni/pages/dashboard_admin.php",
-  responsabile_sicurezza: "/logos_segnalazioni/pages/dashboard_rspp.php",
-  operatore_sicurezza: "/logos_segnalazioni/pages/dashboard_sicurezza.php",
-  referente_commessa: SEGNALAZIONI_SEGNALATORE_URL,
-  segnalatore: SEGNALAZIONI_SEGNALATORE_URL,
+  admin: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=admin`,
+  responsabile_sicurezza: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=responsabile_sicurezza`,
+  operatore_sicurezza: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=operatore_sicurezza`,
+  referente_commessa: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=referente_commessa`,
+  segnalatore: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=segnalatore`,
 };
 
 type SidebarItem = {
@@ -74,8 +75,8 @@ const roleLabels: Record<string, { label: string; icon: LucideIcon; color: strin
 };
 
 function getSegnalazioniUrl(role?: string) {
-  if (!role) return SEGNALAZIONI_SEGNALATORE_URL;
-  return SEGNALAZIONI_URL_BY_ROLE[role] ?? SEGNALAZIONI_SEGNALATORE_URL;
+  if (!role) return `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=non_specificato`;
+  return SEGNALAZIONI_URL_BY_ROLE[role] ?? `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=${encodeURIComponent(role)}`;
 }
 
 function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => void }>) {
