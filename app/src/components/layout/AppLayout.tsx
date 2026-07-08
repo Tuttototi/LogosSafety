@@ -151,16 +151,20 @@ export default function AppLayout(props: Readonly<{ children: React.ReactNode }>
       <aside
         className={`fixed left-0 top-0 z-40 hidden h-full flex-col border-r border-white/10 bg-[#b91c1c] transition-all duration-200 md:flex ${collapsed ? "w-[72px]" : "w-[256px]"}`}
       >
-        <div className="flex h-16 items-center border-b border-white/10 px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-white px-2 py-1">
+        <div className={`flex items-center border-b border-white/10 ${collapsed ? "h-20 px-2 py-3" : "h-28 px-4 py-4"}`}>
+          <div className="flex w-full min-w-0 flex-col items-center justify-center">
+            <div className={`flex w-full shrink-0 items-center justify-center rounded-2xl bg-white px-3 py-2 ${collapsed ? "max-w-[56px]" : "max-w-[216px]"}`}>
               <img
                 src={sidebarLogoUrl}
                 alt={appName}
-                className={`h-8 w-auto object-contain ${collapsed ? "max-w-10" : "max-w-[76px]"}`}
+                className="h-auto w-full object-contain"
               />
             </div>
-            {!collapsed && <span className="truncate text-sm font-semibold tracking-tight text-white">{appName}</span>}
+            {!collapsed && (
+              <span className="mt-2 text-center text-xs font-medium tracking-wide text-white/90">
+                Logos Safety®
+              </span>
+            )}
           </div>
         </div>
 
@@ -183,16 +187,18 @@ export default function AppLayout(props: Readonly<{ children: React.ReactNode }>
             <SheetDescription>Navigazione principale dell&apos;app</SheetDescription>
           </SheetHeader>
           <div className="flex h-full flex-col">
-            <div className="flex h-16 items-center border-b border-white/10 px-4 text-white">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-white px-2 py-1">
+            <div className="flex h-28 items-center border-b border-white/10 px-4 py-4 text-white">
+              <div className="flex w-full min-w-0 flex-col items-center justify-center">
+                <div className="flex w-full max-w-[216px] shrink-0 items-center justify-center rounded-2xl bg-white px-3 py-2">
                   <img
                     src={sidebarLogoUrl}
                     alt={appName}
-                    className="h-8 w-auto max-w-[76px] object-contain"
+                    className="h-auto w-full object-contain"
                   />
                 </div>
-                <span className="truncate text-sm font-semibold tracking-tight">{appName}</span>
+                <span className="mt-2 text-center text-xs font-medium tracking-wide text-white/90">
+                  Logos Safety®
+                </span>
               </div>
             </div>
             <SidebarNav collapsed={false} onNavigate={() => setMobileOpen(false)} />
