@@ -11,6 +11,7 @@
 - Mantenuto il placeholder diagnostico `/logos_segnalazioni/index.html` come artefatto temporaneo non usato dalla sidebar.
 - Migliorato lo smartphone floating con schermo bianco uniforme e drag & drop tramite Pointer Events.
 - Inserito il logo reale Logos nella UI mobile segnalatore usando l'asset pubblico `/assets/LogoLogos.png`.
+- Sostituito il simbolo provvisorio della sidebar con il logo reale Logos.
 
 ## 24 giugno 2026
 

@@ -6,6 +6,7 @@
 
 | Area | Task | Stato |
 |---|---|---|
+| Layout | Sostituire logo provvisorio sidebar con logo reale Logos | Completato |
 | Segnalazioni | Usare asset logo Logos nella UI mobile segnalatore React | Completato |
 | Segnalazioni | Migliorare smartphone floating con schermo bianco uniforme e drag & drop | Completato |
 | Segnalazioni | Assorbire la UI segnalatore mobile statica in React dentro lo smartphone floating | Completato |

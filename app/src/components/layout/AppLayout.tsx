@@ -143,7 +143,7 @@ export default function AppLayout(props: Readonly<{ children: React.ReactNode }>
   const { data: stats } = trpc.dashboard.stats.useQuery(undefined, { enabled: !!user });
 
   const appName = branding?.appName ?? "Logos Safety";
-  const logoUrl = branding?.logoUrl;
+  const sidebarLogoUrl = "/assets/LogoLogos.png";
   const roleInfo = user ? roleLabels[user.role] ?? roleLabels.sola_lettura : null;
 
   return (
@@ -152,20 +152,16 @@ export default function AppLayout(props: Readonly<{ children: React.ReactNode }>
         className={`fixed left-0 top-0 z-40 hidden h-full flex-col border-r border-white/10 bg-[#b91c1c] transition-all duration-200 md:flex ${collapsed ? "w-[72px]" : "w-[256px]"}`}
       >
         <div className="flex h-16 items-center border-b border-white/10 px-4">
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={appName}
-              className={`object-contain ${collapsed ? "w-[34px] max-w-[34px]" : "w-auto"}`}
-            />
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 text-white">
-                <Shield className="h-5 w-5" />
-              </div>
-              {!collapsed && <span className="text-sm font-semibold tracking-tight text-white">{appName}</span>}
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-white px-2 py-1">
+              <img
+                src={sidebarLogoUrl}
+                alt={appName}
+                className={`h-8 w-auto object-contain ${collapsed ? "max-w-10" : "max-w-[76px]"}`}
+              />
             </div>
-          )}
+            {!collapsed && <span className="truncate text-sm font-semibold tracking-tight text-white">{appName}</span>}
+          </div>
         </div>
 
         <SidebarNav collapsed={collapsed} />
@@ -188,16 +184,16 @@ export default function AppLayout(props: Readonly<{ children: React.ReactNode }>
           </SheetHeader>
           <div className="flex h-full flex-col">
             <div className="flex h-16 items-center border-b border-white/10 px-4 text-white">
-              {logoUrl ? (
-                <img src={logoUrl} alt={appName} className="h-8 object-contain" />
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15">
-                    <Shield className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm font-semibold tracking-tight">{appName}</span>
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-white px-2 py-1">
+                  <img
+                    src={sidebarLogoUrl}
+                    alt={appName}
+                    className="h-8 w-auto max-w-[76px] object-contain"
+                  />
                 </div>
-              )}
+                <span className="truncate text-sm font-semibold tracking-tight">{appName}</span>
+              </div>
             </div>
             <SidebarNav collapsed={false} onNavigate={() => setMobileOpen(false)} />
           </div>
