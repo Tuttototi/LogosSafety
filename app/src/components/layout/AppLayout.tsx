@@ -34,15 +34,6 @@ import { trpc } from "@/providers/trpc";
 
 const AUDIT_ROLES = new Set(["admin", "responsabile_sicurezza", "auditor"]);
 const IMPORT_ROLES = new Set(["admin", "responsabile_sicurezza", "operatore_sicurezza", "medico_competente", "referente_commessa", "auditor", "sola_lettura"]);
-const SEGNALAZIONI_DIAGNOSTIC_URL = "/logos_segnalazioni/index.html";
-// Temporary diagnostic mapping: restore the role-specific PHP targets when the real logos_segnalazioni module is mounted.
-const SEGNALAZIONI_URL_BY_ROLE: Record<string, string> = {
-  admin: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=admin`,
-  responsabile_sicurezza: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=responsabile_sicurezza`,
-  operatore_sicurezza: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=operatore_sicurezza`,
-  referente_commessa: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=referente_commessa`,
-  segnalatore: `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=segnalatore`,
-};
 
 type SidebarItem = {
   path: string;
@@ -74,11 +65,6 @@ const roleLabels: Record<string, { label: string; icon: LucideIcon; color: strin
   sola_lettura: { label: "Sola Lettura", icon: BookOpen, color: "bg-gray-100 text-gray-600" },
 };
 
-function getSegnalazioniUrl(role?: string) {
-  if (!role) return `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=non_specificato`;
-  return SEGNALAZIONI_URL_BY_ROLE[role] ?? `${SEGNALAZIONI_DIAGNOSTIC_URL}?role=${encodeURIComponent(role)}`;
-}
-
 function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => void }>) {
   const { collapsed, onNavigate } = props;
   const location = useLocation();
@@ -88,11 +74,7 @@ function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => voi
 
   const items = useMemo(() => {
     const base = [
-      ...navItems.map((item) =>
-        item.path === "/segnalazioni"
-          ? { ...item, path: getSegnalazioniUrl(role), external: true }
-          : item
-      ),
+      ...navItems,
       ...(role && AUDIT_ROLES.has(role) ? [{ path: "/audit", label: "Audit Log", icon: BookOpen }] : []),
       ...(role && IMPORT_ROLES.has(role) ? [{ path: "/import-export", label: "Import / Export", icon: FileSpreadsheet }] : []),
     ];

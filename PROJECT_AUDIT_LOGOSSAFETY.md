@@ -6,6 +6,16 @@
 **Commit analizzato:** `be966fa` (`master`)  
 **Metodo:** analisi statica completa del repository, cronologia Git, schema e migration, type-check non scrivente, lint non scrivente, audit dipendenze npm e tentativo di connessione read-only al database configurato.
 
+## Aggiornamento operativo — 8 luglio 2026
+
+Il modulo Segnalazioni ha assorbito in React la UI segnalatore mobile che prima esisteva solo come `App_Segnalatore.html` statico nella reference legacy.
+
+- aggiunti componenti React/TypeScript `FloatingSmartphone` e `SegnalatoreMobileApp`;
+- la sidebar punta di nuovo alla route interna `/segnalazioni`;
+- la form mobile mostra un messaggio locale al submit e non chiama API, non salva dati e non carica file reali;
+- il placeholder diagnostico `/logos_segnalazioni/index.html` resta disponibile ma non è più la destinazione del menu;
+- rimane aperta l'integrazione backend LogosSafety per persistenza, audit, permessi, allegati e workflow reale.
+
 ## Aggiornamento operativo — 24 giugno 2026
 
 Per il modulo Aziende è stata preparata una versione più solida dell'Import Excel:

@@ -1,11 +1,12 @@
 # Product Backlog LogosSafety
 
-**Ultimo aggiornamento:** 24 giugno 2026
+**Ultimo aggiornamento:** 8 luglio 2026
 
 ## Completato
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Assorbire la UI segnalatore mobile statica in React dentro lo smartphone floating | Completato |
 | Aziende | Preparare Import Excel con template coerente, validazione frontend/backend, gestione duplicati e test automatici | Completato |
 
 ## P0 — Blocco rilascio
@@ -26,6 +27,7 @@
 | Aziende | Registrare audit diff campo per campo su update/import | Migliora tracciabilità cliente | Aperto |
 | Sedi | Completare UI create/edit | Completa CRUD Sedi | Aperto |
 | Lavoratori | Completare UI CRUD e import/export coerenti | Priorità prodotto successiva | Aperto |
+| Segnalazioni | Collegare la form mobile React al backend LogosSafety con CRUD, audit, permessi e allegati reali | Completa il flusso operativo senza legacy PHP | Aperto |
 | Import/Export | Implementare import/export Mansioni, Corsi, Commesse e cataloghi | Chiude gap wizard attuale | Aperto |
 
 ## P2 — Evoluzione

@@ -1,5 +1,15 @@
 # Changelog LogosSafety
 
+## 8 luglio 2026
+
+### Segnalazioni — App segnalatore mobile in React
+
+- Assorbita la UI statica `App_Segnalatore.html` in componenti React/TypeScript interni a LogosSafety.
+- Aggiunto il frame `FloatingSmartphone` per visualizzare il flusso mobile nella pagina `/segnalazioni`.
+- Aggiunta la form mobile `SegnalatoreMobileApp` con submit locale non collegato ad API o database.
+- Ripristinata la voce sidebar `Segnalazioni` come route React interna `/segnalazioni`.
+- Mantenuto il placeholder diagnostico `/logos_segnalazioni/index.html` come artefatto temporaneo non usato dalla sidebar.
+
 ## 24 giugno 2026
 
 ### Aziende — preparazione Import Excel

@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, BadgeCheck, CalendarDays, Camera, CheckCircle2, FileText, ListFilter, PlusCircle, Search, Sparkles, Upload, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, BadgeCheck, CalendarDays, CheckCircle2, FileText, ListFilter, PlusCircle, Search, Sparkles, Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { FloatingSmartphone } from "@/components/reports/FloatingSmartphone";
+import { SegnalatoreMobileApp } from "@/components/reports/SegnalatoreMobileApp";
 import { toast } from "sonner";
 
 type ReportStatus = "Nuova" | "In lavorazione" | "In attesa" | "Richiesta chiusura" | "Chiusa";
@@ -93,10 +95,6 @@ export default function Segnalazioni() {
   const [priorityFilter, setPriorityFilter] = useState<"all" | ReportPriority>("all");
   const [selectedReport, setSelectedReport] = useState<ReportItem>(initialReports[0]);
   const [showPhone, setShowPhone] = useState(false);
-  const [phonePosition, setPhonePosition] = useState<{ x: number; y: number } | null>(null);
-  const [isDraggingPhone, setIsDraggingPhone] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const phoneRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState({
     title: "",
     description: "",
@@ -151,47 +149,8 @@ export default function Segnalazioni() {
     event.target.value = "";
   };
 
-  const handlePhonePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("input, textarea, select, button")) return;
-
-    const rect = phoneRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    setIsDraggingPhone(true);
-    setDragOffset({ x: event.clientX - rect.left, y: event.clientY - rect.top });
-    document.body.classList.add("select-none");
-  };
-
-  useEffect(() => {
-    if (!isDraggingPhone) return;
-
-    const handlePointerMove = (event: PointerEvent) => {
-      setPhonePosition({ x: event.clientX - dragOffset.x, y: event.clientY - dragOffset.y });
-    };
-
-    const handlePointerUp = () => {
-      setIsDraggingPhone(false);
-      document.body.classList.remove("select-none");
-    };
-
-    document.addEventListener("pointermove", handlePointerMove);
-    document.addEventListener("pointerup", handlePointerUp);
-
-    return () => {
-      document.removeEventListener("pointermove", handlePointerMove);
-      document.removeEventListener("pointerup", handlePointerUp);
-      document.body.classList.remove("select-none");
-    };
-  }, [dragOffset.x, dragOffset.y, isDraggingPhone]);
-
   const handlePhoneToggle = () => {
-    if (showPhone) {
-      setShowPhone(false);
-      return;
-    }
-
-    setPhonePosition(null);
-    setShowPhone(true);
+    setShowPhone((current) => !current);
   };
 
   const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -457,33 +416,9 @@ export default function Segnalazioni() {
       </div>
 
       {showPhone && (
-        <div
-          ref={phoneRef}
-          className="fixed bottom-6 right-6 z-50 w-[280px] cursor-grab rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
-          style={phonePosition ? { left: phonePosition.x, top: phonePosition.y, right: "auto", bottom: "auto" } : undefined}
-          onPointerDown={handlePhonePointerDown}
-        >
-          <div className="flex items-center justify-between rounded-2xl bg-slate-950 p-3 text-white">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Flusso mobile</p>
-              <p className="text-sm font-semibold">Segnalazione in corso</p>
-            </div>
-            <button type="button" title="Chiudi telefono fluttuante" className="rounded-full bg-white/10 p-1.5" onClick={() => setShowPhone(false)}>
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <div className="flex items-center gap-2">
-              <Camera className="h-4 w-4 text-red-600" />
-              <p className="text-sm font-semibold text-slate-900">Foto e allegati</p>
-            </div>
-            <div className="mt-3 space-y-2">
-              <div className="rounded-xl bg-white p-2 text-sm text-slate-600">1. Foto scattata e caricata</div>
-              <div className="rounded-xl bg-white p-2 text-sm text-slate-600">2. Segnalazione inoltrata al team sicurezza</div>
-              <div className="rounded-xl bg-white p-2 text-sm text-slate-600">3. Stato aggiornato in tempo reale</div>
-            </div>
-          </div>
-        </div>
+        <FloatingSmartphone onClose={() => setShowPhone(false)}>
+          <SegnalatoreMobileApp />
+        </FloatingSmartphone>
       )}
     </div>
   );
