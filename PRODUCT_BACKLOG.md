@@ -6,6 +6,7 @@
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Aggiungere tab Comunicazioni Sicurezza mock in App Segnalatore | Completato |
 | Segnalazioni | Creare App Segnalatore React riusabile per pagina e smartphone floating | Completato |
 | Layout | Configurare favicon reale LogosSafety nel browser | Completato |
 | Layout | Sostituire logo provvisorio sidebar con logo reale Logos | Completato |

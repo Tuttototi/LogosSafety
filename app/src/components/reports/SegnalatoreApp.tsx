@@ -1,11 +1,15 @@
 import { useId, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import {
+  AlertCircle,
   CheckCircle2,
   Clock3,
   Eye,
   FileText,
+  Image,
   MessageSquare,
+  Newspaper,
+  PlayCircle,
   ShieldCheck,
   Upload,
 } from "lucide-react";
@@ -16,6 +20,9 @@ type SegnalatoreAppVariant = "page" | "mobile";
 type SegnalatoreRoleGroup = "operational" | "manager" | "safety";
 type ReportPriority = "Bassa" | "Media" | "Alta";
 type ReportStatus = "Nuova" | "In carico" | "In attesa integrazione" | "Chiusa";
+type AppTab = "new" | "reports" | "communications";
+type CommunicationType = "Video" | "Circolare" | "Infografica" | "Avviso";
+type CommunicationStatus = "Da vedere" | "Vista" | "Presa visione";
 
 type SegnalatoreAppProps = {
   variant?: SegnalatoreAppVariant;
@@ -40,6 +47,16 @@ type DraftReport = {
   title: string;
   description: string;
   priority: ReportPriority;
+};
+
+type SafetyCommunication = {
+  id: string;
+  title: string;
+  type: CommunicationType;
+  status: CommunicationStatus;
+  publishedAt: string;
+  acknowledgementDue?: string;
+  description: string;
 };
 
 const defaultDraft: DraftReport = {
@@ -94,6 +111,45 @@ const mockReports: SegnalatoreReport[] = [
     update: "Intervento chiuso con evidenza allegata",
     description: "Il parapetto provvisorio e' stato sostituito con protezione certificata.",
     visibleTo: ["safety"],
+  },
+];
+
+// Mock temporanei: sostituire con API Comunicazioni Sicurezza in sprint successivo.
+const mockCommunications: SafetyCommunication[] = [
+  {
+    id: "COM-2026-021",
+    title: "Video briefing DPI per lavori in quota",
+    type: "Video",
+    status: "Da vedere",
+    publishedAt: "09 lug 2026",
+    acknowledgementDue: "16 lug 2026",
+    description: "Richiamo operativo sulle verifiche preliminari e sull'uso corretto dei DPI anticaduta.",
+  },
+  {
+    id: "COM-2026-018",
+    title: "Circolare accessi area cantiere",
+    type: "Circolare",
+    status: "Vista",
+    publishedAt: "08 lug 2026",
+    acknowledgementDue: "12 lug 2026",
+    description: "Aggiornamento sulle modalita' di accesso, registrazione visitatori e percorsi autorizzati.",
+  },
+  {
+    id: "COM-2026-015",
+    title: "Infografica procedura emergenza",
+    type: "Infografica",
+    status: "Presa visione",
+    publishedAt: "05 lug 2026",
+    description: "Schema visuale dei punti di raccolta e dei contatti da attivare in caso di emergenza.",
+  },
+  {
+    id: "COM-2026-011",
+    title: "Avviso manutenzione area deposito",
+    type: "Avviso",
+    status: "Da vedere",
+    publishedAt: "02 lug 2026",
+    acknowledgementDue: "10 lug 2026",
+    description: "Comunicazione temporanea sulla chiusura parziale dell'area deposito durante la manutenzione.",
   },
 ];
 
@@ -152,6 +208,19 @@ const priorityClasses: Record<ReportPriority, string> = {
   Alta: "bg-red-50 text-red-700",
 };
 
+const communicationStatusClasses: Record<CommunicationStatus, string> = {
+  "Da vedere": "bg-red-50 text-red-700",
+  Vista: "bg-blue-50 text-blue-700",
+  "Presa visione": "bg-emerald-50 text-emerald-700",
+};
+
+const communicationTypeIcons: Record<CommunicationType, typeof PlayCircle> = {
+  Video: PlayCircle,
+  Circolare: Newspaper,
+  Infografica: Image,
+  Avviso: AlertCircle,
+};
+
 function normalizeRole(role?: string | null) {
   return role?.trim() || "segnalatore";
 }
@@ -169,10 +238,11 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
   const roleLabel = roleLabels[currentRole] ?? roleLabels.segnalatore;
   const isMobile = variant === "mobile";
 
-  const [activeTab, setActiveTab] = useState<"new" | "reports">("new");
+  const [activeTab, setActiveTab] = useState<AppTab>("new");
   const [draft, setDraft] = useState<DraftReport>(defaultDraft);
   const [attachments, setAttachments] = useState<string[]>([]);
   const [reports, setReports] = useState<SegnalatoreReport[]>(mockReports);
+  const [communications, setCommunications] = useState<SafetyCommunication[]>(mockCommunications);
   const [selectedCode, setSelectedCode] = useState(mockReports[0]?.code ?? "");
   const [message, setMessage] = useState("");
 
@@ -233,6 +303,28 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
     setMessage(`${action} su ${report.code}: azione UI-only, nessuna API chiamata.`);
   };
 
+  const handleCommunicationOpen = (communication: SafetyCommunication) => {
+    setCommunications((current) =>
+      current.map((item) =>
+        item.id === communication.id && item.status === "Da vedere"
+          ? { ...item, status: "Vista" }
+          : item,
+      ),
+    );
+    setMessage(`Apertura ${communication.id}: contenuto mock, nessun download o streaming reale.`);
+  };
+
+  const handleCommunicationAcknowledgement = (communication: SafetyCommunication) => {
+    setCommunications((current) =>
+      current.map((item) =>
+        item.id === communication.id
+          ? { ...item, status: "Presa visione" }
+          : item,
+      ),
+    );
+    setMessage(`Presa visione registrata solo localmente per ${communication.id}.`);
+  };
+
   return (
     <section
       className={cn(
@@ -258,7 +350,7 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
         )}
       </header>
 
-      <div className="mt-4 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm font-semibold">
+      <div className="mt-4 grid grid-cols-3 rounded-xl bg-slate-100 p-1 text-sm font-semibold">
         <button
           type="button"
           className={cn("rounded-lg px-3 py-2 transition", activeTab === "new" ? "bg-white text-red-700 shadow-sm" : "text-slate-600")}
@@ -273,6 +365,13 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
         >
           Segnalazioni
         </button>
+        <button
+          type="button"
+          className={cn("rounded-lg px-3 py-2 transition", activeTab === "communications" ? "bg-white text-red-700 shadow-sm" : "text-slate-600")}
+          onClick={() => setActiveTab("communications")}
+        >
+          Comunicazioni
+        </button>
       </div>
 
       {message && (
@@ -281,7 +380,7 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
         </p>
       )}
 
-      {activeTab === "new" ? (
+      {activeTab === "new" && (
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label htmlFor={`${idPrefix}-location`} className="mb-1 block text-sm font-medium text-slate-800">
@@ -379,7 +478,9 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
             Invia Segnalazione
           </button>
         </form>
-      ) : (
+      )}
+
+      {activeTab === "reports" && (
         <div className="mt-5 space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -463,6 +564,76 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "communications" && (
+        <div className="mt-5 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Comunicazioni Sicurezza</p>
+              <p className="text-xs text-slate-500">Video, circolari, infografiche e avvisi mock</p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+              {communications.length}
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {communications.map((communication) => {
+              const TypeIcon = communicationTypeIcons[communication.type];
+
+              return (
+                <article key={communication.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{communication.id}</p>
+                      <h2 className="mt-1 text-sm font-semibold text-slate-900">{communication.title}</h2>
+                    </div>
+                    <span className={cn("shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold", communicationStatusClasses[communication.status])}>
+                      {communication.status}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{communication.description}</p>
+
+                  <div className="mt-3 grid gap-2 text-xs text-slate-600">
+                    <span className="inline-flex items-center gap-1">
+                      <TypeIcon className="h-3.5 w-3.5" />
+                      {communication.type}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      Pubblicata: {communication.publishedAt}
+                    </span>
+                    {communication.acknowledgementDue && (
+                      <span className="inline-flex items-center gap-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Scadenza presa visione: {communication.acknowledgementDue}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-700"
+                      onClick={() => handleCommunicationOpen(communication)}
+                    >
+                      Apri
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-700"
+                      onClick={() => handleCommunicationAcknowledgement(communication)}
+                    >
+                      Presa visione
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         </div>
       )}
     </section>

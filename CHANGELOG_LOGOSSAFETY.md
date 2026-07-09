@@ -15,6 +15,7 @@
 - Configurata la favicon reale LogosSafety tramite `/assets/favicon.ico`.
 - Creata `SegnalatoreApp` React riusabile con form, tab, lista mock e azioni UI-only per ruolo.
 - Aggiunta route interna `/segnalazioni/app` e collegato lo smartphone floating alla stessa App Segnalatore.
+- Aggiunta tab `Comunicazioni` in `SegnalatoreApp` con mock locali e presa visione UI-only.
 
 ## 24 giugno 2026
 

@@ -19,6 +19,7 @@ Il modulo Segnalazioni ha assorbito in React la UI segnalatore mobile che prima 
 - la favicon browser usa l'asset reale `/assets/favicon.ico`;
 - aggiunta `SegnalatoreApp` React riusabile per pagina reale e smartphone floating, con mock locali e azioni UI-only per ruolo;
 - aggiunta route interna `/segnalazioni/app` per aprire l'App Segnalatore a pagina intera;
+- la `SegnalatoreApp` include una tab `Comunicazioni` per mock di video, circolari, infografiche e avvisi con presa visione locale;
 - il placeholder diagnostico `/logos_segnalazioni/index.html` resta disponibile ma non è più la destinazione del menu;
 - rimane aperta l'integrazione backend LogosSafety per persistenza, audit, permessi, allegati e workflow reale.
 
