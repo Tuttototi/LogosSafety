@@ -1,5 +1,13 @@
 # Changelog LogosSafety
 
+## 9 luglio 2026
+
+### Segnalazioni — hotfix post modularizzazione
+
+- Stabilizzati gli import della `SegnalatoreApp` modularizzata usando il path esplicito `SegnalatoreApp/index`.
+- Verificato il mount di `/segnalazioni`, `/segnalazioni/app` e dello smartphone floating dopo riavvio pulito del dev server.
+- Rilevata una `500` non bloccante su `branding.get`, distinta dal refactor Segnalazioni.
+
 ## 8 luglio 2026
 
 ### Segnalazioni — App segnalatore mobile in React

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FloatingSmartphone } from "@/components/reports/FloatingSmartphone";
-import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp";
+import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp/index";
 
 type ReportStatus = "Nuova" | "In lavorazione" | "In attesa" | "Richiesta chiusura" | "Chiusa";
 type ReportPriority = "Bassa" | "Media" | "Alta" | "Critica";

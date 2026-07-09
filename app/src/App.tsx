@@ -13,7 +13,7 @@ import ImportExport from "@/pages/ImportExport";
 import Microclima from "@/pages/Microclima";
 import Login from "@/pages/Login";
 import Segnalazioni from "@/pages/Segnalazioni";
-import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp";
+import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp/index";
 import NotFound from "@/pages/NotFound";
 
 function LayoutWrapper({ children }: Readonly<{ children: React.ReactNode }>) {

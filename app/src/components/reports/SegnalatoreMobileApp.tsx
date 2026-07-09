@@ -1,4 +1,4 @@
-import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp";
+import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp/index";
 
 type SegnalatoreMobileAppProps = {
   role?: string;

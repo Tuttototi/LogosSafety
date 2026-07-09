@@ -1,11 +1,12 @@
 # Product Backlog LogosSafety
 
-**Ultimo aggiornamento:** 8 luglio 2026
+**Ultimo aggiornamento:** 9 luglio 2026
 
 ## Completato
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Stabilizzare mount App Segnalatore dopo modularizzazione | Completato |
 | Segnalazioni | Modularizzare architettura interna di SegnalatoreApp | Completato |
 | Segnalazioni | Aggiungere tab Comunicazioni Sicurezza mock in App Segnalatore | Completato |
 | Segnalazioni | Creare App Segnalatore React riusabile per pagina e smartphone floating | Completato |
