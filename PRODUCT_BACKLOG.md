@@ -6,6 +6,7 @@
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Definire workflow ufficiale dominio Segnalazioni | Completato |
 | Segnalazioni | Definire domain model TypeScript per API, database e frontend futuri | Completato |
 | Segnalazioni | Stabilizzare mount App Segnalatore dopo modularizzazione | Completato |
 | Segnalazioni | Modularizzare architettura interna di SegnalatoreApp | Completato |

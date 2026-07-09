@@ -6,6 +6,7 @@
 
 - Aggiunto il modello TypeScript puro del dominio Segnalazioni sotto `app/src/modules/segnalazioni/domain`.
 - Definiti tipi e interfacce per segnalazioni, commenti, allegati, comunicazioni e workflow senza dipendenze da backend, database o componenti React.
+- Aggiunto il workflow ufficiale lineare delle Segnalazioni con funzioni pure per transizioni, stato aperto/chiuso ed editabilità.
 
 ### Segnalazioni — hotfix post modularizzazione
 

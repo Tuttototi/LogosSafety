@@ -1,7 +1,7 @@
 import type { Allegato } from "./Allegato";
 import type { Commento } from "./Commento";
 import type { DomainId, ISODateTimeString, PrioritaSegnalazione, StatoSegnalazione } from "./Enums";
-import type { WorkflowEvento } from "./Workflow";
+import type { WorkflowEvento } from "./workflow";
 
 /**
  * Aggregate root for a safety report.

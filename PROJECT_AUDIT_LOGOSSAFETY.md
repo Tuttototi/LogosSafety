@@ -13,6 +13,8 @@ Definito il primo modello TypeScript puro del dominio Segnalazioni:
 - aggiunta la cartella `app/src/modules/segnalazioni/domain`;
 - introdotte interfacce per `Segnalazione`, `Commento`, `Allegato`, `Comunicazione` e `WorkflowEvento`;
 - introdotti enum di dominio per priorita, stati, tipologie comunicazione e stati di presa visione;
+- aggiunto il workflow ufficiale lineare `Nuova` -> `Presa in carico` -> `In lavorazione` -> `Richiesta integrazione` -> `Integrata` -> `Risolta` -> `Chiusa`;
+- aggiunte funzioni pure `canTransition`, `getAllowedTransitions`, `isClosed`, `isOpen` e `isEditable`;
 - nessuna modifica a backend, database, routing, autenticazione o componenti React.
 
 Hotfix sul refactor della `SegnalatoreApp`:
