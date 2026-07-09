@@ -16,6 +16,7 @@
 - Creata `SegnalatoreApp` React riusabile con form, tab, lista mock e azioni UI-only per ruolo.
 - Aggiunta route interna `/segnalazioni/app` e collegato lo smartphone floating alla stessa App Segnalatore.
 - Aggiunta tab `Comunicazioni` in `SegnalatoreApp` con mock locali e presa visione UI-only.
+- Rifattorizzata `SegnalatoreApp` in componenti, hook, tipi e mock separati senza modificare il comportamento visibile.
 
 ## 24 giugno 2026
 
