@@ -2,6 +2,11 @@
 
 ## 9 luglio 2026
 
+### Segnalazioni — domain model
+
+- Aggiunto il modello TypeScript puro del dominio Segnalazioni sotto `app/src/modules/segnalazioni/domain`.
+- Definiti tipi e interfacce per segnalazioni, commenti, allegati, comunicazioni e workflow senza dipendenze da backend, database o componenti React.
+
 ### Segnalazioni — hotfix post modularizzazione
 
 - Stabilizzati gli import della `SegnalatoreApp` modularizzata usando il path esplicito `SegnalatoreApp/index`.
