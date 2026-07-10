@@ -7,13 +7,13 @@ export interface ListVisibleByScopeContext {
 }
 
 export interface SegnalazioniRepository {
-  findById(id: DomainId): Promise<Segnalazione | null>;
+  findById(id: DomainId, tenantId?: DomainId): Promise<Segnalazione | null>;
   listVisibleByScope(context: ListVisibleByScopeContext): Promise<Segnalazione[]>;
   create(segnalazione: Segnalazione): Promise<void>;
   update(segnalazione: Segnalazione): Promise<void>;
   addComment(comment: Commento): Promise<void>;
   saveAcknowledgement(acknowledgement: AcknowledgementRecord): Promise<void>;
-  hasAcknowledgement(segnalazioneId: DomainId, userId: DomainId): Promise<boolean>;
-  existsByCode(code: string): Promise<boolean>;
+  hasAcknowledgement(segnalazioneId: DomainId, userId: DomainId, tenantId?: DomainId): Promise<boolean>;
+  existsByCode(code: string, tenantId?: DomainId): Promise<boolean>;
 }
 

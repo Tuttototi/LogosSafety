@@ -40,7 +40,7 @@ export function createCreateSegnalazioneUseCase(deps: SegnalazioniUseCaseDepende
     }
 
     const code = deps.ids.nextCode("SEG");
-    if (await deps.repository.existsByCode(code)) {
+    if (await deps.repository.existsByCode(code, input.actor.tenantId)) {
       return fail(ApplicationErrorCode.Conflict, "Generated segnalazione code already exists", { code });
     }
 

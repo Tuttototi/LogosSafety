@@ -97,8 +97,10 @@ class FakeSegnalazioniRepository implements SegnalazioniRepository {
   readonly comments: Commento[] = [];
   readonly acknowledgements: AcknowledgementRecord[] = [];
 
-  async findById(id: string): Promise<Segnalazione | null> {
-    return this.reports.get(id) ?? null;
+  async findById(id: string, tenantId?: string): Promise<Segnalazione | null> {
+    const report = this.reports.get(id) ?? null;
+    if (!report || (tenantId && report.tenantId !== tenantId)) return null;
+    return report;
   }
 
   async listVisibleByScope(): Promise<Segnalazione[]> {
@@ -121,16 +123,19 @@ class FakeSegnalazioniRepository implements SegnalazioniRepository {
     this.acknowledgements.push(acknowledgement);
   }
 
-  async hasAcknowledgement(segnalazioneId: string, userId: string): Promise<boolean> {
+  async hasAcknowledgement(segnalazioneId: string, userId: string, tenantId?: string): Promise<boolean> {
     return this.acknowledgements.some(
       (acknowledgement) =>
         acknowledgement.segnalazioneId === segnalazioneId &&
-        acknowledgement.userId === userId,
+        acknowledgement.userId === userId &&
+        (!tenantId || acknowledgement.tenantId === tenantId),
     );
   }
 
-  async existsByCode(code: string): Promise<boolean> {
-    return [...this.reports.values()].some((segnalazione) => segnalazione.code === code);
+  async existsByCode(code: string, tenantId?: string): Promise<boolean> {
+    return [...this.reports.values()].some(
+      (segnalazione) => segnalazione.code === code && (!tenantId || segnalazione.tenantId === tenantId),
+    );
   }
 }
 

@@ -2,6 +2,13 @@
 
 ## 10 luglio 2026
 
+### Segnalazioni — persistenza Drizzle
+
+- Aggiunte tabelle Drizzle per Segnalazioni, commenti, allegati, workflow events e prese visione.
+- Generata la migrazione `0002_talented_omega_flight.sql` con snapshot Drizzle aggiornata.
+- Aggiunto repository Drizzle concreto non ancora collegato a UI/API, con mapper dominio-record e filtri tenant/company nelle query di lista.
+- Aggiunti test Vitest sui mapper di persistenza e validazione dei valori enum letti da database.
+
 ### Segnalazioni — application layer
 
 - Aggiunto il livello applicativo del modulo Segnalazioni con use case, ports, errori tipizzati ed eventi applicativi.

@@ -6,6 +6,7 @@
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Implementare schema Drizzle e repository persistente non collegato alla UI | Completato |
 | Segnalazioni | Definire application layer con use case e ports astratti | Completato |
 | Segnalazioni | Consolidare domain model con autore autenticato e perimetro organizzativo | Completato |
 | Segnalazioni | Definire workflow ufficiale dominio Segnalazioni | Completato |
@@ -39,7 +40,8 @@
 | Aziende | Registrare audit diff campo per campo su update/import | Migliora tracciabilità cliente | Aperto |
 | Sedi | Completare UI create/edit | Completa CRUD Sedi | Aperto |
 | Lavoratori | Completare UI CRUD e import/export coerenti | Priorità prodotto successiva | Aperto |
-| Segnalazioni | Collegare la form mobile React al backend LogosSafety con CRUD, audit, permessi e allegati reali | Completa il flusso operativo senza legacy PHP | Aperto |
+| Segnalazioni | Collegare use case e repository persistente a endpoint backend LogosSafety con audit, permessi e allegati reali | Completa il flusso operativo senza legacy PHP | Aperto |
+| Segnalazioni | Eseguire test di migrazione e repository su database MySQL/MariaDB locale | Valida vincoli, FK e transazioni reali prima del wiring API | Aperto |
 | Import/Export | Implementare import/export Mansioni, Corsi, Commesse e cataloghi | Chiude gap wizard attuale | Aperto |
 
 ## P2 — Evoluzione

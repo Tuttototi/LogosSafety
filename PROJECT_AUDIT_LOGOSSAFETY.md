@@ -8,6 +8,15 @@
 
 ## Aggiornamento operativo — 10 luglio 2026
 
+Implementata la prima infrastruttura persistente del modulo Segnalazioni:
+
+- aggiunte tabelle Drizzle per `segnalazioni`, commenti, allegati, eventi workflow e prese visione;
+- generata la migrazione `0002_talented_omega_flight.sql` con snapshot Drizzle `0002_snapshot.json`;
+- aggiunto repository Drizzle concreto sotto `app/src/modules/segnalazioni/infrastructure/persistence`;
+- aggiunti mapper espliciti dominio <-> record persistenti con validazione dei valori enum letti da database;
+- aggiornato il port repository con parametri opzionali di tenant per lookup sensibili, senza collegare UI, route, API o backend;
+- aggiunti test Vitest sui mapper di persistenza e confermati i test applicativi Segnalazioni.
+
 Creato il livello applicativo Clean Architecture del modulo Segnalazioni:
 
 - aggiunta la cartella `app/src/modules/segnalazioni/application`;

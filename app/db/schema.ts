@@ -673,6 +673,182 @@ export const nonConformities = mysqlTable("non_conformities", {
   createdBy: bigint("created_by", { mode: "number", unsigned: true }),
 });
 
+// ─── Segnalazioni ───────────────────────────────────────────────
+export const segnalazioni = mysqlTable("segnalazioni", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  code: varchar("code", { length: 64 }).notNull(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  companyId: varchar("company_id", { length: 64 }).notNull(),
+  contractId: varchar("contract_id", { length: 64 }),
+  siteId: varchar("site_id", { length: 64 }),
+  plantId: varchar("plant_id", { length: 64 }),
+  areaId: varchar("area_id", { length: 64 }),
+  reporterUserId: varchar("reporter_user_id", { length: 64 }).notNull(),
+  reporterPersonId: varchar("reporter_person_id", { length: 64 }).notNull(),
+  reporterEmployeeId: varchar("reporter_employee_id", { length: 64 }),
+  reporterFirstName: varchar("reporter_first_name", { length: 120 }).notNull(),
+  reporterLastName: varchar("reporter_last_name", { length: 120 }).notNull(),
+  reporterEmail: varchar("reporter_email", { length: 320 }),
+  reporterCompanyId: varchar("reporter_company_id", { length: 64 }).notNull(),
+  reporterRole: varchar("reporter_role", { length: 64 }).notNull(),
+  createdByUserId: varchar("created_by_user_id", { length: 64 }).notNull(),
+  createdByPersonId: varchar("created_by_person_id", { length: 64 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  priority: mysqlEnum("priority", ["Bassa", "Media", "Alta", "Critica"]).default("Media").notNull(),
+  severity: mysqlEnum("severity", ["Bassa", "Media", "Alta", "Critica"]).default("Media").notNull(),
+  status: mysqlEnum("status", [
+    "Nuova",
+    "Presa in carico",
+    "In lavorazione",
+    "Richiesta integrazione",
+    "Integrata",
+    "Risolta",
+    "Chiusa",
+  ]).default("Nuova").notNull(),
+  category: mysqlEnum("category", ["Sicurezza", "Ambiente", "Attrezzature", "Procedura", "Altro"]).notNull(),
+  type: mysqlEnum("type", ["Pericolo", "Incidente", "Near miss", "Non conformita", "Suggerimento"]).notNull(),
+  assignedToUserId: varchar("assigned_to_user_id", { length: 64 }),
+  responsibleUserId: varchar("responsible_user_id", { length: 64 }),
+  closedAt: timestamp("closed_at"),
+  deletedAt: timestamp("deleted_at"),
+  deletedByUserId: varchar("deleted_by_user_id", { length: 64 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => [
+  uniqueIndex("idx_segnalazioni_tenant_code").on(table.tenantId, table.code),
+  index("idx_segnalazioni_scope").on(table.tenantId, table.companyId, table.contractId, table.siteId),
+  index("idx_segnalazioni_plant_area").on(table.tenantId, table.companyId, table.plantId, table.areaId),
+  index("idx_segnalazioni_created_by").on(table.tenantId, table.createdByUserId),
+  index("idx_segnalazioni_assigned_to").on(table.tenantId, table.assignedToUserId),
+  index("idx_segnalazioni_status").on(table.tenantId, table.status),
+  index("idx_segnalazioni_deleted").on(table.deletedAt),
+]);
+
+export type SegnalazioneRecord = typeof segnalazioni.$inferSelect;
+
+export const segnalazioneComments = mysqlTable("segnalazione_comments", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  segnalazioneId: varchar("segnalazione_id", { length: 64 }).notNull(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  companyId: varchar("company_id", { length: 64 }).notNull(),
+  authorUserId: varchar("author_user_id", { length: 64 }),
+  authorName: varchar("author_name", { length: 255 }),
+  body: text("body").notNull(),
+  public: boolean("public").default(true).notNull(),
+  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull().$onUpdate(() => new Date()),
+}, (table) => [
+  index("idx_segnalazione_comments_report").on(table.tenantId, table.segnalazioneId),
+  index("idx_segnalazione_comments_author").on(table.tenantId, table.authorUserId),
+  index("idx_segnalazione_comments_deleted").on(table.deletedAt),
+  foreignKey({
+    name: "fk_segnalazione_comments_report_id",
+    columns: [table.segnalazioneId],
+    foreignColumns: [segnalazioni.id],
+  }),
+]);
+
+export type SegnalazioneCommentRecord = typeof segnalazioneComments.$inferSelect;
+
+export const segnalazioneAttachments = mysqlTable("segnalazione_attachments", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  segnalazioneId: varchar("segnalazione_id", { length: 64 }).notNull(),
+  commentId: varchar("comment_id", { length: 64 }),
+  comunicazioneId: varchar("comunicazione_id", { length: 64 }),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  companyId: varchar("company_id", { length: 64 }).notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  mimeType: varchar("mime_type", { length: 160 }).notNull(),
+  fileSize: int("file_size").notNull(),
+  attachmentType: mysqlEnum("attachment_type", ["Foto", "Documento", "Altro"]).default("Altro").notNull(),
+  description: text("description"),
+  checksum: varchar("checksum", { length: 128 }),
+  storageKey: varchar("storage_key", { length: 512 }),
+  uploadedByUserId: varchar("uploaded_by_user_id", { length: 64 }),
+  uploadedByName: varchar("uploaded_by_name", { length: 255 }),
+  deletedAt: timestamp("deleted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_segnalazione_attachments_report").on(table.tenantId, table.segnalazioneId),
+  index("idx_segnalazione_attachments_comment").on(table.commentId),
+  index("idx_segnalazione_attachments_uploader").on(table.tenantId, table.uploadedByUserId),
+  index("idx_segnalazione_attachments_deleted").on(table.deletedAt),
+  foreignKey({
+    name: "fk_segnalazione_attachments_report_id",
+    columns: [table.segnalazioneId],
+    foreignColumns: [segnalazioni.id],
+  }),
+  foreignKey({
+    name: "fk_segnalazione_attachments_comment_id",
+    columns: [table.commentId],
+    foreignColumns: [segnalazioneComments.id],
+  }),
+]);
+
+export type SegnalazioneAttachmentRecord = typeof segnalazioneAttachments.$inferSelect;
+
+export const segnalazioneWorkflowEvents = mysqlTable("segnalazione_workflow_events", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  segnalazioneId: varchar("segnalazione_id", { length: 64 }).notNull(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  companyId: varchar("company_id", { length: 64 }).notNull(),
+  eventType: varchar("event_type", { length: 80 }).notNull(),
+  fromStatus: mysqlEnum("from_status", [
+    "Nuova",
+    "Presa in carico",
+    "In lavorazione",
+    "Richiesta integrazione",
+    "Integrata",
+    "Risolta",
+    "Chiusa",
+  ]),
+  toStatus: mysqlEnum("to_status", [
+    "Nuova",
+    "Presa in carico",
+    "In lavorazione",
+    "Richiesta integrazione",
+    "Integrata",
+    "Risolta",
+    "Chiusa",
+  ]).notNull(),
+  actorUserId: varchar("actor_user_id", { length: 64 }),
+  actorName: varchar("actor_name", { length: 255 }),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_segnalazione_workflow_report").on(table.tenantId, table.segnalazioneId, table.createdAt),
+  index("idx_segnalazione_workflow_actor").on(table.tenantId, table.actorUserId),
+  foreignKey({
+    name: "fk_segnalazione_workflow_report_id",
+    columns: [table.segnalazioneId],
+    foreignColumns: [segnalazioni.id],
+  }),
+]);
+
+export type SegnalazioneWorkflowEventRecord = typeof segnalazioneWorkflowEvents.$inferSelect;
+
+export const segnalazioneAcknowledgements = mysqlTable("segnalazione_acknowledgements", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  segnalazioneId: varchar("segnalazione_id", { length: 64 }).notNull(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  companyId: varchar("company_id", { length: 64 }).notNull(),
+  userId: varchar("user_id", { length: 64 }).notNull(),
+  personId: varchar("person_id", { length: 64 }).notNull(),
+  acknowledgedAt: timestamp("acknowledged_at").notNull(),
+}, (table) => [
+  uniqueIndex("idx_segnalazione_ack_unique").on(table.tenantId, table.segnalazioneId, table.userId),
+  index("idx_segnalazione_ack_user").on(table.tenantId, table.userId),
+  foreignKey({
+    name: "fk_segnalazione_ack_report_id",
+    columns: [table.segnalazioneId],
+    foreignColumns: [segnalazioni.id],
+  }),
+]);
+
+export type SegnalazioneAcknowledgementRecord = typeof segnalazioneAcknowledgements.$inferSelect;
+
 // ─── Audit Logs ─────────────────────────────────────────────────
 export const auditLogs = mysqlTable("audit_logs", {
   id: serial("id").primaryKey(),

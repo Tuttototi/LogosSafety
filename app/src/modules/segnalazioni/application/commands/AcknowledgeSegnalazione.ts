@@ -10,7 +10,7 @@ export function createAcknowledgeSegnalazioneUseCase(deps: SegnalazioniUseCaseDe
     const loadResult = await loadVisibleSegnalazione(deps, input.actor, input.id);
     if (!loadResult.success) return loadResult;
 
-    if (await deps.repository.hasAcknowledgement(input.id, input.actor.userId)) {
+    if (await deps.repository.hasAcknowledgement(input.id, input.actor.userId, loadResult.data.tenantId)) {
       return fail(ApplicationErrorCode.Conflict, "Segnalazione acknowledgement already exists", {
         id: input.id,
         userId: input.actor.userId,

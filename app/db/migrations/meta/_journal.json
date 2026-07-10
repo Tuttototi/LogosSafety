@@ -15,6 +15,13 @@
       "when": 1782116677310,
       "tag": "0001_purple_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1783691013217,
+      "tag": "0002_talented_omega_flight",
+      "breakpoints": true
     }
   ]
 }
