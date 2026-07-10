@@ -8,6 +8,15 @@
 
 ## Aggiornamento operativo — 10 luglio 2026
 
+Definito il Core Domain condiviso di LogosSafety:
+
+- aggiunta la cartella `app/src/modules/core/domain`;
+- introdotti modelli TypeScript puri per Tenant, Organization, Person, UserAccount, Membership, Role, Permission, RoleAssignment, OrganizationalScope, Site, Contract, Plant e Area;
+- definiti ruoli iniziali e permessi come oggetti `as const`, senza enum TypeScript;
+- aggiunte validazioni pure tenant-bound senza dipendenze da database, API, Hono, tRPC o React;
+- aggiunto `docs/architecture/CORE_DOMAIN.md` con modello concettuale, relazioni, confini, rischi e strategia di integrazione con Segnalazioni;
+- aggiunti test Vitest `core-domain` per persona, account, membership, scope e role assignment.
+
 Implementata la prima infrastruttura persistente del modulo Segnalazioni:
 
 - aggiunte tabelle Drizzle per `segnalazioni`, commenti, allegati, eventi workflow e prese visione;

@@ -2,6 +2,13 @@
 
 ## 10 luglio 2026
 
+### Core Domain — modello condiviso
+
+- Aggiunto il Core Domain TypeScript puro per tenant, organizzazioni, persone, account, membership, ruoli, permessi, scope e role assignment.
+- Aggiunte validazioni pure per persona, account, organizzazione, membership, role assignment e perimetro organizzativo.
+- Documentata l'architettura in `docs/architecture/CORE_DOMAIN.md`, inclusi mapping con schema esistente, rischi e strategia di integrazione futura con Segnalazioni.
+- Aggiunti test Vitest `core-domain` senza database, API o UI.
+
 ### Segnalazioni — persistenza Drizzle
 
 - Aggiunte tabelle Drizzle per Segnalazioni, commenti, allegati, workflow events e prese visione.

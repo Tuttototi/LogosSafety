@@ -6,6 +6,7 @@
 
 | Area | Task | Stato |
 |---|---|---|
+| Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
 | Segnalazioni | Implementare schema Drizzle e repository persistente non collegato alla UI | Completato |
 | Segnalazioni | Definire application layer con use case e ports astratti | Completato |
 | Segnalazioni | Consolidare domain model con autore autenticato e perimetro organizzativo | Completato |
@@ -42,6 +43,8 @@
 | Lavoratori | Completare UI CRUD e import/export coerenti | Priorità prodotto successiva | Aperto |
 | Segnalazioni | Collegare use case e repository persistente a endpoint backend LogosSafety con audit, permessi e allegati reali | Completa il flusso operativo senza legacy PHP | Aperto |
 | Segnalazioni | Eseguire test di migrazione e repository su database MySQL/MariaDB locale | Valida vincoli, FK e transazioni reali prima del wiring API | Aperto |
+| Core Domain | Definire adapter legacy da users/workers/companies al Core Domain | Necessario per migrare senza rompere auth e moduli esistenti | Aperto |
+| Sicurezza | Definire matrice RBAC ruolo-permesso basata su Core Domain | Necessario per sostituire gerarchie ruolo hardcoded | Aperto |
 | Import/Export | Implementare import/export Mansioni, Corsi, Commesse e cataloghi | Chiude gap wizard attuale | Aperto |
 
 ## P2 — Evoluzione
