@@ -6,6 +6,7 @@
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Definire application layer con use case e ports astratti | Completato |
 | Segnalazioni | Consolidare domain model con autore autenticato e perimetro organizzativo | Completato |
 | Segnalazioni | Definire workflow ufficiale dominio Segnalazioni | Completato |
 | Segnalazioni | Definire domain model TypeScript per API, database e frontend futuri | Completato |

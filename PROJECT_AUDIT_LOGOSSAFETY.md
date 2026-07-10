@@ -8,6 +8,14 @@
 
 ## Aggiornamento operativo — 10 luglio 2026
 
+Creato il livello applicativo Clean Architecture del modulo Segnalazioni:
+
+- aggiunta la cartella `app/src/modules/segnalazioni/application`;
+- definiti ports astratti per repository, audit, notifiche, clock e generazione ID/codici;
+- aggiunti use case per creazione, lista visibile, dettaglio, presa in carico, commento, richiesta/integrazione, cambio stato, risoluzione, chiusura e presa visione;
+- audit e notifiche sono rappresentati da contratti e eventi applicativi, senza implementazioni concrete;
+- aggiunti test Vitest puri con fake in-memory, senza backend, database, tRPC, Hono o React.
+
 Consolidato il dominio Segnalazioni secondo la regola approvata: nessuna segnalazione anonima, nessun accesso pubblico, autore autenticato e perimetro organizzativo esplicito.
 
 - aggiunti `OrganizationalScope`, `Reporter`, ruoli di dominio e snapshot autore minimale;

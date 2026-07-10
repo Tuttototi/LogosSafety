@@ -2,6 +2,12 @@
 
 ## 10 luglio 2026
 
+### Segnalazioni — application layer
+
+- Aggiunto il livello applicativo del modulo Segnalazioni con use case, ports, errori tipizzati ed eventi applicativi.
+- Definiti contratti astratti per repository, audit, notifiche, clock e generazione ID/codici senza implementazioni infrastrutturali.
+- Aggiunti test Vitest puri per creazione, lista, dettaglio, presa in carico, commenti, integrazioni, transizioni, chiusura e presa visione.
+
 ### Segnalazioni — autore autenticato e perimetro organizzativo
 
 - Consolidato il domain model Segnalazioni con autore autenticato, tenant, azienda e perimetro operativo.
