@@ -1,5 +1,13 @@
 # Changelog LogosSafety
 
+## 10 luglio 2026
+
+### Segnalazioni — autore autenticato e perimetro organizzativo
+
+- Consolidato il domain model Segnalazioni con autore autenticato, tenant, azienda e perimetro operativo.
+- Aggiunti ruoli di dominio, policy pure di visibilita/commento/gestione e validazioni per bloccare segnalazioni anonime o cross-tenant.
+- Aggiunti test puri Vitest per autore, visibilita, perimetro impianto/area, tenant, utente inattivo e ruolo sconosciuto.
+
 ## 9 luglio 2026
 
 ### Segnalazioni — domain model

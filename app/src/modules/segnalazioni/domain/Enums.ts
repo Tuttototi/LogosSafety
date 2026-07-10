@@ -11,6 +11,32 @@ export type DomainId = string;
 export type ISODateTimeString = string;
 
 /**
+ * Business category of a report.
+ */
+export const CategoriaSegnalazione = {
+  Sicurezza: "Sicurezza",
+  Ambiente: "Ambiente",
+  Attrezzature: "Attrezzature",
+  Procedura: "Procedura",
+  Altro: "Altro",
+} as const;
+
+export type CategoriaSegnalazione = (typeof CategoriaSegnalazione)[keyof typeof CategoriaSegnalazione];
+
+/**
+ * Operational type of a report.
+ */
+export const TipoSegnalazione = {
+  Pericolo: "Pericolo",
+  Incidente: "Incidente",
+  NearMiss: "Near miss",
+  NonConformita: "Non conformita",
+  Suggerimento: "Suggerimento",
+} as const;
+
+export type TipoSegnalazione = (typeof TipoSegnalazione)[keyof typeof TipoSegnalazione];
+
+/**
  * Business priority assigned to a safety report.
  */
 export const PrioritaSegnalazione = {
@@ -21,6 +47,18 @@ export const PrioritaSegnalazione = {
 } as const;
 
 export type PrioritaSegnalazione = (typeof PrioritaSegnalazione)[keyof typeof PrioritaSegnalazione];
+
+/**
+ * Safety severity assigned during triage.
+ */
+export const GravitaSegnalazione = {
+  Bassa: "Bassa",
+  Media: "Media",
+  Alta: "Alta",
+  Critica: "Critica",
+} as const;
+
+export type GravitaSegnalazione = (typeof GravitaSegnalazione)[keyof typeof GravitaSegnalazione];
 
 /**
  * Lifecycle status of a safety report.
@@ -71,6 +109,9 @@ export const TipoAllegato = {
 
 export type TipoAllegato = (typeof TipoAllegato)[keyof typeof TipoAllegato];
 
+export const CATEGORIA_SEGNALAZIONE_VALUES = Object.values(CategoriaSegnalazione);
+export const TIPO_SEGNALAZIONE_VALUES = Object.values(TipoSegnalazione);
 export const PRIORITA_SEGNALAZIONE_VALUES = Object.values(PrioritaSegnalazione);
+export const GRAVITA_SEGNALAZIONE_VALUES = Object.values(GravitaSegnalazione);
 export const STATO_SEGNALAZIONE_VALUES = Object.values(StatoSegnalazione);
 export const TIPOLOGIA_COMUNICAZIONE_VALUES = Object.values(TipologiaComunicazione);

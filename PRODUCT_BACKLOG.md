@@ -1,11 +1,12 @@
 # Product Backlog LogosSafety
 
-**Ultimo aggiornamento:** 9 luglio 2026
+**Ultimo aggiornamento:** 10 luglio 2026
 
 ## Completato
 
 | Area | Task | Stato |
 |---|---|---|
+| Segnalazioni | Consolidare domain model con autore autenticato e perimetro organizzativo | Completato |
 | Segnalazioni | Definire workflow ufficiale dominio Segnalazioni | Completato |
 | Segnalazioni | Definire domain model TypeScript per API, database e frontend futuri | Completato |
 | Segnalazioni | Stabilizzare mount App Segnalatore dopo modularizzazione | Completato |

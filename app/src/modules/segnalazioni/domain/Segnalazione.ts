@@ -1,63 +1,75 @@
 import type { Allegato } from "./Allegato";
 import type { Commento } from "./Commento";
-import type { DomainId, ISODateTimeString, PrioritaSegnalazione, StatoSegnalazione } from "./Enums";
+import type {
+  CategoriaSegnalazione,
+  DomainId,
+  GravitaSegnalazione,
+  ISODateTimeString,
+  PrioritaSegnalazione,
+  StatoSegnalazione,
+  TipoSegnalazione,
+} from "./Enums";
+import type { CompanyId, OrganizationalScope, TenantId } from "./OrganizationalScope";
+import type { Reporter, ReporterSnapshot } from "./Reporter";
 import type { WorkflowEvento } from "./workflow";
 
 /**
  * Aggregate root for a safety report.
+ * createdByUserId and createdByPersonId are stable references to LogosSafety records.
+ * reporter is a minimal descriptive snapshot of the authenticated author at creation time.
  */
 export interface Segnalazione {
   id: DomainId;
-  codice: string;
-  titolo: string;
-  descrizione: string;
-  priorita: PrioritaSegnalazione;
-  stato: StatoSegnalazione;
-  appaltoId?: DomainId;
-  appaltoNome?: string;
-  commessaId?: DomainId;
-  commessaNome?: string;
-  sedeId?: DomainId;
-  luogo?: string;
-  segnalatoreId?: DomainId;
-  segnalatoreNome?: string;
-  assegnatarioId?: DomainId;
-  assegnatarioNome?: string;
-  allegati?: Allegato[];
-  commenti?: Commento[];
+  code: string;
+  tenantId: TenantId;
+  companyId: CompanyId;
+  reporter: ReporterSnapshot;
+  createdByUserId: DomainId;
+  createdByPersonId: DomainId;
+  organizationalScope: OrganizationalScope;
+  title: string;
+  description: string;
+  priority: PrioritaSegnalazione;
+  severity: GravitaSegnalazione;
+  status: StatoSegnalazione;
+  category: CategoriaSegnalazione;
+  type: TipoSegnalazione;
+  assignedToUserId?: DomainId;
+  responsibleUserId?: DomainId;
+  attachments?: Allegato[];
+  comments?: Commento[];
   workflow?: WorkflowEvento[];
   createdAt: ISODateTimeString;
   updatedAt: ISODateTimeString;
-  presaInCaricoAt?: ISODateTimeString;
-  risoltaAt?: ISODateTimeString;
-  chiusaAt?: ISODateTimeString;
+  closedAt?: ISODateTimeString;
 }
 
 /**
  * Input shape for creating a report before backend persistence exists.
  */
 export interface SegnalazioneInput {
-  titolo: string;
-  descrizione: string;
-  priorita: PrioritaSegnalazione;
-  appaltoId?: DomainId;
-  appaltoNome?: string;
-  commessaId?: DomainId;
-  commessaNome?: string;
-  sedeId?: DomainId;
-  luogo?: string;
-  allegati?: Allegato[];
+  tenantId: TenantId;
+  companyId: CompanyId;
+  reporter: Reporter;
+  organizationalScope: OrganizationalScope;
+  title: string;
+  description: string;
+  priority: PrioritaSegnalazione;
+  severity: GravitaSegnalazione;
+  category: CategoriaSegnalazione;
+  type: TipoSegnalazione;
+  attachments?: Allegato[];
 }
 
 /**
  * Patch shape for status and assignment changes.
  */
 export interface SegnalazioneUpdate {
-  titolo?: string;
-  descrizione?: string;
-  priorita?: PrioritaSegnalazione;
-  stato?: StatoSegnalazione;
-  assegnatarioId?: DomainId;
-  assegnatarioNome?: string;
-  luogo?: string;
+  title?: string;
+  description?: string;
+  priority?: PrioritaSegnalazione;
+  severity?: GravitaSegnalazione;
+  status?: StatoSegnalazione;
+  assignedToUserId?: DomainId;
+  responsibleUserId?: DomainId;
 }

@@ -6,6 +6,16 @@
 **Commit analizzato:** `be966fa` (`master`)  
 **Metodo:** analisi statica completa del repository, cronologia Git, schema e migration, type-check non scrivente, lint non scrivente, audit dipendenze npm e tentativo di connessione read-only al database configurato.
 
+## Aggiornamento operativo — 10 luglio 2026
+
+Consolidato il dominio Segnalazioni secondo la regola approvata: nessuna segnalazione anonima, nessun accesso pubblico, autore autenticato e perimetro organizzativo esplicito.
+
+- aggiunti `OrganizationalScope`, `Reporter`, ruoli di dominio e snapshot autore minimale;
+- aggiornata `Segnalazione` con `tenantId`, `companyId`, `reporter`, `createdByUserId`, `createdByPersonId`, `organizationalScope`, campi inglesi stabili e riferimenti a commenti/allegati;
+- aggiunte funzioni pure `canCreateSegnalazione`, `canViewSegnalazione`, `canCommentSegnalazione`, `canManageSegnalazione`;
+- aggiunte validazioni pure `validateReporter`, `validateOrganizationalScope` e `canSubmitSegnalazione`;
+- aggiunti test Vitest puri sul dominio, senza backend, database, API o UI.
+
 ## Aggiornamento operativo — 9 luglio 2026
 
 Definito il primo modello TypeScript puro del dominio Segnalazioni:
