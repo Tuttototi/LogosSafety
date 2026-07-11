@@ -1,4 +1,9 @@
-import type { DomainId, OrganizationalScope, Role } from "../../core/domain";
+import type {
+  DomainId,
+  OrganizationalScope,
+  Permission,
+  Role,
+} from "../../core/domain";
 
 /**
  * Backend-built actor context passed to application use cases and events.
@@ -6,9 +11,18 @@ import type { DomainId, OrganizationalScope, Role } from "../../core/domain";
  */
 export interface ActorContext {
   tenantId: DomainId;
+  companyId: DomainId;
   personId?: DomainId;
   userId?: DomainId;
+  role: Role;
   roles: Role[];
+  active: boolean;
+  organizationalScope: OrganizationalScope;
   scopes: OrganizationalScope[];
+  permissions: Permission[];
+  canAccessAllTenants: boolean;
   displayName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
 }

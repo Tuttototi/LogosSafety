@@ -17,24 +17,27 @@ Tutte le procedure usano `authedQuery`.
 
 L'attore applicativo viene costruito solo dal contesto autenticato server-side (`ctx.user`):
 
-- `userId`: derivato dall'id utente LogosSafety legacy;
-- `personId`: derivato dall'id utente LogosSafety legacy finche' non esiste il mapping persona reale;
-- `role`: mappato dai ruoli legacy LogosSafety ai ruoli del dominio Segnalazioni;
-- `active`: letto dal record utente autenticato;
-- `tenantId` e `companyId`: assegnati dal boundary server-side temporaneo.
+- `userId`: risolto dal Core Identity Context;
+- `personId`: risolto dal worker/person collegato all'account;
+- `role`: mappato dal ruolo effettivo risolto server-side;
+- `active`: derivato da account, persona, membership e ruolo;
+- `tenantId` e `companyId`: risolti dal Core Identity Context.
 
 Il client non puo' inviare `tenantId`, `companyId`, `role`, `userId` o `personId`.
 
-## Scope temporaneo
+## Core Identity Context
 
-Il record utente legacy non contiene ancora tenant, company e person reali del Core Domain.
-Per questa integrazione viene usato un adapter temporaneo e server-side:
+Segnalazioni usa `CoreIdentityService` tramite `app/api/segnalazioni/actor.ts`.
 
-- default tenant: `logos-safety-local`;
-- default company: `logos-safety-company-local`;
-- override locale ammesso via `SEGNALAZIONI_TENANT_ID` e `SEGNALAZIONI_COMPANY_ID`.
+Il servizio carica da database:
 
-Questa scelta mantiene i filtri tenant/company nel dominio e nel repository, ma non sostituisce il futuro adapter Core Domain.
+- `users`;
+- `workers` come adapter legacy Person;
+- `companies` come Organization e tenant boundary temporaneo;
+- `user_organization_scopes` come scope operativo.
+
+Il dettaglio architetturale e' documentato in `docs/architecture/CORE_IDENTITY_CONTEXT.md`.
+
 Il client puo' filtrare solo i sotto-scope operativi ammessi:
 
 - `contractId`
@@ -172,8 +175,9 @@ La validazione reale del repository MySQL resta coperta dal test opt-in `segnala
 
 ## Limiti residui
 
-- l'adapter tenant/company/person e' temporaneo finche' il Core Domain non viene collegato agli utenti reali;
+- il Core Identity Context usa ancora adapter legacy per `workers`, `companies`, `users.role` e `user_organization_scopes`;
+- manca una FK esplicita `users.person_id`;
+- manca una tabella tenant SaaS dedicata;
 - audit e notifiche sono port differiti, non ancora collegati a outbox o audit persistente atomico;
 - allegati, commenti, prese visione e transizioni workflow avanzate non sono esposti da questo sprint;
 - non esiste ancora un client React collegato a queste procedure.
-

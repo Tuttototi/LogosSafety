@@ -5,6 +5,7 @@ import {
   type ApplicationResult,
 } from "@/modules/segnalazioni/application";
 import { SegnalazioniPersistenceError } from "@/modules/segnalazioni/infrastructure/persistence";
+import { CoreIdentityError, CoreIdentityErrorCode } from "../core/identity";
 
 function codeForApplicationError(code: ApplicationError["code"]): TRPCError["code"] {
   switch (code) {
@@ -48,6 +49,23 @@ export function unwrapResult<T>(result: ApplicationResult<T>): T {
 export function mapUnexpectedSegnalazioniError(error: unknown): never {
   if (error instanceof TRPCError) throw error;
 
+  if (error instanceof CoreIdentityError) {
+    switch (error.code) {
+      case CoreIdentityErrorCode.IdentityNotFound:
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Authenticated identity is required" });
+      case CoreIdentityErrorCode.AccountInactive:
+      case CoreIdentityErrorCode.AccountLocked:
+      case CoreIdentityErrorCode.PersonNotLinked:
+      case CoreIdentityErrorCode.CompanyNotLinked:
+      case CoreIdentityErrorCode.InvalidRole:
+      case CoreIdentityErrorCode.InvalidScope:
+      case CoreIdentityErrorCode.CrossTenantScope:
+        throw new TRPCError({ code: "FORBIDDEN", message: error.message });
+      case CoreIdentityErrorCode.IdentityConfigurationError:
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Identity configuration error" });
+    }
+  }
+
   if (error instanceof SegnalazioniPersistenceError) {
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
@@ -67,4 +85,3 @@ export function mapUnexpectedSegnalazioniError(error: unknown): never {
     message: "Segnalazioni operation failed",
   });
 }
-

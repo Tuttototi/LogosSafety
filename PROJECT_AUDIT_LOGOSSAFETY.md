@@ -8,6 +8,16 @@
 
 ## Aggiornamento operativo — 11 luglio 2026
 
+Implementato il primo Core Identity Context backend:
+
+- aggiunto servizio `CoreIdentityService` per costruire `ActorContext` da `ctx.user` e dati DB;
+- aggiunto port repository e adapter Drizzle su `users`, `workers`, `companies`, `user_organization_scopes`, `sites` e `contracts`;
+- formalizzato l'adapter legacy: `workers` come Person, `companies` come Organization/tenant boundary, `users.role` come RoleAssignment e `user_organization_scopes` come scope;
+- esteso `ActorContext` condiviso con company, ruolo, stato attivo, scope aggregato, permessi e `canAccessAllTenants`;
+- aggiornato il router Segnalazioni per usare il nuovo identity context senza modificare API pubbliche, UI o schema DB;
+- aggiunti test unitari e integration test MySQL opt-in con cleanup mirato;
+- documentata l'architettura in `docs/architecture/CORE_IDENTITY_CONTEXT.md`.
+
 Collegato il primo boundary backend del modulo Segnalazioni a LogosSafety:
 
 - aggiunto router tRPC `segnalazioni` con procedure `create`, `list` e `byId`;

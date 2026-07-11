@@ -2,6 +2,16 @@
 
 ## 11 luglio 2026
 
+### Core Identity — contesto attore backend
+
+- Aggiunto `CoreIdentityService` backend per risolvere `ActorContext` da utente autenticato, record utente, worker/persona, azienda, ruolo e scope organizzativo.
+- Aggiunto repository Drizzle dedicato su `users`, `workers`, `companies`, `user_organization_scopes`, `sites` e `contracts`.
+- Esteso il contratto condiviso `ActorContext` con company, ruolo primario, stato attivo, permessi, scope aggregato e `canAccessAllTenants`.
+- Sostituito l'adapter locale temporaneo di Segnalazioni con il nuovo Core Identity Context, mantenendo invariate le procedure `create`, `list` e `byId`.
+- Aggiunti test unitari e integration test opt-in MySQL locale per il repository identity.
+- Documentata l'architettura in `docs/architecture/CORE_IDENTITY_CONTEXT.md`.
+- Nessuna modifica a UI React, routing frontend, schema DB, migrazioni o PHP.
+
 ### Segnalazioni — API tRPC backend
 
 - Esposte le procedure backend `segnalazioni.create`, `segnalazioni.list` e `segnalazioni.byId` tramite Hono/tRPC.

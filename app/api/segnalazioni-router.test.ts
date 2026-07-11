@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { User } from "@db/schema";
 import {
   ApplicationErrorCode,
+  type ApplicationActor,
   type ApplicationResult,
   type GetSegnalazioneByIdInput,
   type ListVisibleSegnalazioniInput,
@@ -19,9 +20,9 @@ import {
   type Segnalazione,
 } from "@/modules/segnalazioni/domain";
 import type { TrpcContext } from "./context";
-import { getLegacySegnalazioniScope } from "./segnalazioni/actor";
 import {
   createSegnalazioniRouter,
+  type SegnalazioniActorResolver,
   type SegnalazioniApiDependencies,
   type SegnalazioniDependencyFactory,
 } from "./segnalazioni";
@@ -167,10 +168,40 @@ function createDependencyFactory(options: {
   });
 }
 
+function makeApplicationActor(overrides: Partial<ApplicationActor> = {}): ApplicationActor {
+  return {
+    userId: "legacy-user-1",
+    personId: "legacy-person-1",
+    firstName: "Mario",
+    lastName: "Rossi",
+    email: "mario.rossi@example.test",
+    tenantId: baseScope.tenantId,
+    companyId: baseScope.companyId,
+    role: SegnalazioniRole.ResponsabileSicurezza,
+    active: true,
+    organizationalScope: baseScope,
+    assignedScopes: [baseScope],
+    canAccessAllTenants: false,
+    ...overrides,
+  };
+}
+
+function createActorResolver(options: {
+  actor?: ApplicationActor;
+  calls?: TrpcContext[];
+  throwError?: Error;
+} = {}): SegnalazioniActorResolver {
+  return async (ctx) => {
+    options.calls?.push(ctx);
+    if (options.throwError) throw options.throwError;
+    return options.actor ?? makeApplicationActor();
+  };
+}
+
 describe("segnalazioni tRPC router", () => {
   it("creates a segnalazione from authenticated server context", async () => {
     const calls = { create: [] as CreateSegnalazioneInput[] };
-    const router = createSegnalazioniRouter(createDependencyFactory({ calls }));
+    const router = createSegnalazioniRouter(createDependencyFactory({ calls }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.create({
@@ -195,7 +226,7 @@ describe("segnalazioni tRPC router", () => {
   });
 
   it("denies anonymous create calls", async () => {
-    const router = createSegnalazioniRouter(createDependencyFactory());
+    const router = createSegnalazioniRouter(createDependencyFactory(), createActorResolver());
     const caller = router.createCaller(createContext());
 
     await expect(
@@ -211,7 +242,7 @@ describe("segnalazioni tRPC router", () => {
   });
 
   it("does not accept tenant, company or role from client input", async () => {
-    const router = createSegnalazioniRouter(createDependencyFactory());
+    const router = createSegnalazioniRouter(createDependencyFactory(), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
     const maliciousInput = {
       title: "Parapetto instabile",
@@ -234,7 +265,7 @@ describe("segnalazioni tRPC router", () => {
   it("maps inactive users to forbidden", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       createResult: fail(ApplicationErrorCode.InactiveUser, "Actor is inactive"),
-    }));
+    }), createActorResolver({ actor: makeApplicationActor({ active: false }) }));
     const caller = router.createCaller(createContext(createTestUser({ active: false })));
 
     await expect(
@@ -259,7 +290,7 @@ describe("segnalazioni tRPC router", () => {
           organizationalScope: { ...baseScope, tenantId: "other-tenant" },
         }),
       ],
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.list();
@@ -274,7 +305,7 @@ describe("segnalazioni tRPC router", () => {
         makeSegnalazione({ id: "plant-a", organizationalScope: { ...baseScope, plantId: "plant-a" } }),
         makeSegnalazione({ id: "plant-b", organizationalScope: { ...baseScope, plantId: "plant-b" } }),
       ],
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.list({ organizationalScope: { plantId: "plant-a" } });
@@ -300,7 +331,7 @@ describe("segnalazioni tRPC router", () => {
           },
         }),
       ],
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.list({ createdByMe: true });
@@ -315,7 +346,7 @@ describe("segnalazioni tRPC router", () => {
         makeSegnalazione({ id: "second", priority: PrioritaSegnalazione.Alta, status: StatoSegnalazione.Nuova }),
         makeSegnalazione({ id: "third", priority: PrioritaSegnalazione.Media, status: StatoSegnalazione.Risolta }),
       ],
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.list({
@@ -334,7 +365,7 @@ describe("segnalazioni tRPC router", () => {
   it("returns detail only for a visible report", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       reports: [makeSegnalazione({ id: "visible-report" })],
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.byId({ id: "visible-report" });
@@ -366,7 +397,7 @@ describe("segnalazioni tRPC router", () => {
           ],
         }),
       ],
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.list();
@@ -382,7 +413,7 @@ describe("segnalazioni tRPC router", () => {
   it("does not leak cross-tenant detail access", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       byIdResult: fail(ApplicationErrorCode.CrossTenantAccess, "Cross-tenant access is not allowed"),
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     await expect(caller.byId({ id: "other-tenant-report" })).rejects.toMatchObject({
@@ -393,7 +424,7 @@ describe("segnalazioni tRPC router", () => {
   it("maps validation failures to bad request", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       createResult: fail(ApplicationErrorCode.ValidationError, "Segnalazione input is invalid"),
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     await expect(
@@ -411,7 +442,7 @@ describe("segnalazioni tRPC router", () => {
   it("maps conflicts without returning persistence details", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       createResult: fail(ApplicationErrorCode.Conflict, "Generated segnalazione code already exists"),
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     await expect(
@@ -432,7 +463,7 @@ describe("segnalazioni tRPC router", () => {
   it("sanitizes unexpected repository errors", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       throwOnCreate: new Error("raw database connection details"),
-    }));
+    }), createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     await expect(
@@ -450,16 +481,26 @@ describe("segnalazioni tRPC router", () => {
     });
   });
 
-  it("keeps the legacy tenant adapter server-side", () => {
-    expect(getLegacySegnalazioniScope()).toEqual({
-      tenantId: baseScope.tenantId,
-      companyId: baseScope.companyId,
-    });
+  it("uses the identity actor resolver server-side", async () => {
+    const identityCalls: TrpcContext[] = [];
+    const router = createSegnalazioniRouter(
+      createDependencyFactory(),
+      createActorResolver({ calls: identityCalls }),
+    );
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    await caller.byId({ id: "api-report-1" });
+
+    expect(identityCalls).toHaveLength(1);
+    expect(identityCalls[0]?.user?.id).toBe(1);
   });
 
   it("maps unsupported legacy read roles to non-management domain roles", async () => {
     const calls = { create: [] as CreateSegnalazioneInput[] };
-    const router = createSegnalazioniRouter(createDependencyFactory({ calls }));
+    const router = createSegnalazioniRouter(
+      createDependencyFactory({ calls }),
+      createActorResolver({ actor: makeApplicationActor({ role: SegnalazioniRole.Dipendente }) }),
+    );
     const caller = router.createCaller(createContext(createTestUser({ role: "sola_lettura" })));
 
     await caller.create({
@@ -477,7 +518,7 @@ describe("segnalazioni tRPC router", () => {
   it("preserves tRPC errors thrown by middleware", async () => {
     const router = createSegnalazioniRouter(() => {
       throw new TRPCError({ code: "FORBIDDEN", message: "forbidden" });
-    });
+    }, createActorResolver());
     const caller = router.createCaller(createContext(createTestUser()));
 
     await expect(caller.byId({ id: "api-report-1" })).rejects.toMatchObject({

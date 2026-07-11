@@ -15,8 +15,23 @@ import {
 } from "./schemas";
 import { buildScopeFromInput } from "./scope";
 import type { Segnalazione } from "@/modules/segnalazioni/domain";
+import type { ApplicationActor } from "@/modules/segnalazioni/application";
+import type { TrpcContext } from "../context";
+import { CoreIdentityError, CoreIdentityErrorCode } from "../core/identity";
 
 type NormalizedListSegnalazioniApiInput = NonNullable<ListSegnalazioniApiInput>;
+export type SegnalazioniActorResolver = (ctx: TrpcContext) => Promise<ApplicationActor>;
+
+async function defaultActorResolver(ctx: TrpcContext): Promise<ApplicationActor> {
+  if (!ctx.user) {
+    throw new CoreIdentityError(
+      CoreIdentityErrorCode.IdentityNotFound,
+      "Authenticated user is required",
+    );
+  }
+
+  return buildSegnalazioniActor(ctx.user);
+}
 
 function bySortValue(report: SegnalazioneListItemDto, sortBy: "createdAt" | "updatedAt" | "priority" | "status"): string {
   return String(report[sortBy]);
@@ -35,13 +50,14 @@ function sortReports(
 
 export function createSegnalazioniRouter(
   dependencyFactory: SegnalazioniDependencyFactory = createSegnalazioniDependencies,
+  actorResolver: SegnalazioniActorResolver = defaultActorResolver,
 ) {
   return createRouter({
     create: authedQuery
       .input(createSegnalazioneInputSchema)
       .mutation(async ({ ctx, input }) => {
         try {
-          const actor = buildSegnalazioniActor(ctx.user);
+          const actor = await actorResolver(ctx);
           const deps = dependencyFactory(ctx);
           const segnalazione = unwrapResult(await deps.createSegnalazione({
             actor,
@@ -64,7 +80,7 @@ export function createSegnalazioniRouter(
       .input(listSegnalazioniInputSchema)
       .query(async ({ ctx, input }) => {
         try {
-          const actor = buildSegnalazioniActor(ctx.user);
+          const actor = await actorResolver(ctx);
           const normalizedInput: NormalizedListSegnalazioniApiInput = input ?? {};
           const page = normalizedInput.page ?? 1;
           const pageSize = normalizedInput.pageSize ?? 20;
@@ -114,7 +130,7 @@ export function createSegnalazioniRouter(
       .input(byIdSegnalazioneInputSchema)
       .query(async ({ ctx, input }) => {
         try {
-          const actor = buildSegnalazioniActor(ctx.user);
+          const actor = await actorResolver(ctx);
           const deps = dependencyFactory(ctx);
           const segnalazione = unwrapResult(await deps.getSegnalazioneById({
             actor,
