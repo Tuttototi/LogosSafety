@@ -8,6 +8,15 @@
 
 ## Aggiornamento operativo — 11 luglio 2026
 
+Validata la persistenza Segnalazioni su database MySQL locale isolato:
+
+- creato container Docker locale `logos-safety-mysql` con MySQL 8.4 e database `logos_safety`;
+- applicate realmente le migrazioni Drizzle locali fino a `0002_talented_omega_flight`;
+- verificate le cinque tabelle Segnalazioni, gli indici principali, i vincoli unique `tenant_id + code` e `tenant_id + segnalazione_id + user_id`, e le FK interne;
+- aggiunto test Vitest opt-in su `DrizzleSegnalazioniRepository` reale per create, find, update, commenti, prese visione, duplicati, tenant isolation, filtro autore, filtro plantId, code cross-tenant, snapshot autore, mapping stato e soft delete;
+- documentata la procedura in `docs/testing/SEGNALAZIONI_PERSISTENCE_TEST.md`;
+- nessuna modifica a UI, routing, auth, Hono, tRPC o database remoti.
+
 Definito l'Application Context architetturale di LogosSafety:
 
 - aggiunto `docs/architecture/APPLICATION_CONTEXT.md` con confini dei moduli, ownership dati, dipendenze consentite/vietate, eventi, regole di integrazione e strategia di migrazione da `app/src/components/reports` verso `app/src/modules`;

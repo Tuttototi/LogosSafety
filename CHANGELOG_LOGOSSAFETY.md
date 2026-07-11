@@ -2,6 +2,14 @@
 
 ## 11 luglio 2026
 
+### Segnalazioni — validazione persistenza MySQL locale
+
+- Avviato container Docker locale `logos-safety-mysql` con MySQL 8.4 e database `logos_safety`.
+- Applicate realmente le migrazioni Drizzle locali fino a `0002_talented_omega_flight`.
+- Verificate su MySQL reale le tabelle Segnalazioni, constraint unique, FK interne, indici principali e tipi colonna.
+- Aggiunto test Vitest opt-in `segnalazioni-persistence.integration` sul vero `DrizzleSegnalazioniRepository`, con tenant isolation e cleanup mirato.
+- Documentata la procedura in `docs/testing/SEGNALAZIONI_PERSISTENCE_TEST.md`.
+
 ### Architettura — application context
 
 - Aggiunto `docs/architecture/APPLICATION_CONTEXT.md` con mappa moduli, ownership dati, dipendenze consentite/vietate, eventi, regole di integrazione e strategia di migrazione incrementale.
