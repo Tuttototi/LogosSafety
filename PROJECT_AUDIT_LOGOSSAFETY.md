@@ -8,6 +8,17 @@
 
 ## Aggiornamento operativo — 11 luglio 2026
 
+Collegata la UI SegnalatoreApp alle API reali Segnalazioni:
+
+- aggiunto layer frontend `app/src/modules/segnalazioni/ui` con hook tRPC, mapper DTO e builder payload create;
+- `SegnalatoreApp` ora carica lista e dettaglio dal backend e salva nuove segnalazioni su `segnalazioni.create`;
+- la pagina `/segnalazioni` e lo smartphone floating usano lo stesso layer dati;
+- rimosso l'uso runtime dei mock Segnalazioni, mantenendo solo i mock Comunicazioni Sicurezza;
+- il frontend non invia tenant, company, user, person, role, reporter, status o privilegi;
+- il campo Appalto non mostra piu' opzioni mock e resta risolto dallo scope backend finche' non esiste una query sicura per appalti visibili;
+- `segnalazioni.list` non restringe piu' il default al primo scope operativo, cosi' una create senza appalto selezionabile torna visibile in lista;
+- gli allegati sono disabilitati con messaggio esplicito di funzionalita' futura.
+
 Implementato il primo Core Identity Context backend:
 
 - aggiunto servizio `CoreIdentityService` per costruire `ActorContext` da `ctx.user` e dati DB;

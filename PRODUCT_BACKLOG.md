@@ -9,6 +9,7 @@
 | Architettura | Definire Application Context, ownership dati, eventi e confini moduli | Completato |
 | Core Identity | Implementare Core Identity Context backend con adapter legacy e integrazione Segnalazioni | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
+| Segnalazioni | Collegare SegnalatoreApp alle API reali per lista, creazione e dettaglio | Completato |
 | Segnalazioni | Esporre API backend tRPC per creazione, lista e dettaglio con repository persistente | Completato |
 | Segnalazioni | Validare migrazione e repository persistente su database MySQL locale isolato | Completato |
 | Segnalazioni | Implementare schema Drizzle e repository persistente non collegato alla UI | Completato |
@@ -45,6 +46,7 @@
 | Aziende | Registrare audit diff campo per campo su update/import | Migliora tracciabilità cliente | Aperto |
 | Sedi | Completare UI create/edit | Completa CRUD Sedi | Aperto |
 | Lavoratori | Completare UI CRUD e import/export coerenti | Priorità prodotto successiva | Aperto |
+| Segnalazioni | Aggiungere query sicura per appalti/commesse visibili all'attore | Necessaria per selezione contesto operativo senza mock | Aperto |
 | Segnalazioni | Completare endpoint backend Segnalazioni per audit atomico, allegati reali, commenti e workflow operativo | Completa il flusso operativo senza legacy PHP | Aperto |
 | Core Domain | Migrare gli adapter legacy identity verso tabelle Core dedicate persons/memberships/role_assignments/tenants | Necessario per superare il boundary temporaneo basato su schema legacy | Aperto |
 | Sicurezza | Definire matrice RBAC ruolo-permesso basata su Core Domain | Necessario per sostituire gerarchie ruolo hardcoded | Aperto |

@@ -173,11 +173,35 @@ La suite `segnalazioni-router.test.ts` verifica:
 
 La validazione reale del repository MySQL resta coperta dal test opt-in `segnalazioni-persistence.integration.test.ts`.
 
+## Integrazione frontend
+
+`SegnalatoreApp` usa queste procedure tramite il layer:
+
+```text
+app/src/modules/segnalazioni/ui
+```
+
+La UI invia a `segnalazioni.create` solo:
+
+- `title`;
+- `description`;
+- `priority`;
+- `severity`;
+- `category`;
+- `type`.
+
+Non invia tenant, company, role, reporter, userId, personId o status.
+
+Il campo Appalto/Commessa non usa mock: finche' non esiste una query sicura per gli appalti visibili, la create usa lo scope dell'attore backend senza `contractId` client-side.
+
+La `list` senza filtro `organizationalScope` esplicito non viene ristretta al primo scope operativo dell'attore: carica il perimetro company autorizzato e lascia al domain layer il filtro di visibilita'. Questo permette al flusso create senza appalto selezionabile di mostrare subito la segnalazione appena creata.
+
 ## Limiti residui
 
 - il Core Identity Context usa ancora adapter legacy per `workers`, `companies`, `users.role` e `user_organization_scopes`;
 - manca una FK esplicita `users.person_id`;
 - manca una tabella tenant SaaS dedicata;
+- manca una query frontend/backend dedicata agli appalti visibili all'attore;
 - audit e notifiche sono port differiti, non ancora collegati a outbox o audit persistente atomico;
 - allegati, commenti, prese visione e transizioni workflow avanzate non sono esposti da questo sprint;
-- non esiste ancora un client React collegato a queste procedure.
+- Comunicazioni Sicurezza non sono ancora collegate a backend.

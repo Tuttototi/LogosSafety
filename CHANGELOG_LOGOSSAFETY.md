@@ -2,6 +2,16 @@
 
 ## 11 luglio 2026
 
+### Segnalazioni — SegnalatoreApp collegata alle API
+
+- Collegata `SegnalatoreApp` alle procedure tRPC reali `segnalazioni.list`, `segnalazioni.create` e `segnalazioni.byId`.
+- Aggiunto layer frontend `app/src/modules/segnalazioni/ui` con hook, mapper e builder payload.
+- Rimossi i mock Segnalazioni dal runtime di `SegnalatoreApp` e della pagina `/segnalazioni`; i mock Comunicazioni restano invariati.
+- Disabilitato l'upload allegati nel form con messaggio esplicito di funzionalita' futura.
+- Corretto il comportamento default di `segnalazioni.list` per non restringere la lista al primo scope operativo quando la create non invia un appalto selezionabile.
+- Documentata l'integrazione in `docs/frontend/SEGNALATORE_APP_INTEGRATION.md`.
+- Nessuna modifica a schema DB, migrazioni, Core Identity, Domain Segnalazioni, workflow, sidebar o PHP.
+
 ### Core Identity — contesto attore backend
 
 - Aggiunto `CoreIdentityService` backend per risolvere `ActorContext` da utente autenticato, record utente, worker/persona, azienda, ruolo e scope organizzativo.

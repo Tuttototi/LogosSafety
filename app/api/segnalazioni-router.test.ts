@@ -299,6 +299,28 @@ describe("segnalazioni tRPC router", () => {
     expect(result.total).toBe(1);
   });
 
+  it("does not narrow the default list to the actor first explicit scope", async () => {
+    const calls = { list: [] as ListVisibleSegnalazioniInput[] };
+    const router = createSegnalazioniRouter(createDependencyFactory({
+      reports: [
+        makeSegnalazione({
+          id: "company-level-report",
+          organizationalScope: {
+            tenantId: baseScope.tenantId,
+            companyId: baseScope.companyId,
+          },
+        }),
+      ],
+      calls,
+    }), createActorResolver());
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    const result = await caller.list();
+
+    expect(calls.list[0]?.organizationalScope).toBeUndefined();
+    expect(result.items.map((item) => item.id)).toEqual(["company-level-report"]);
+  });
+
   it("filters list results by plant scope", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       reports: [

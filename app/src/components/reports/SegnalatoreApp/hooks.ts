@@ -1,7 +1,19 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { defaultDraft, mockCommunications, mockReports, roleGroups, roleLabels } from "./mock";
+import {
+  ATTACHMENTS_DISABLED_MESSAGE,
+  CREATE_ERROR_MESSAGE,
+  CREATE_SUCCESS_MESSAGE,
+  DETAIL_ERROR_MESSAGE,
+  EMPTY_LIST_MESSAGE,
+  LIST_ERROR_MESSAGE,
+  getFriendlySegnalazioniError,
+  useCreateSegnalazione,
+  useSegnalazioneDetail,
+  useSegnalazioni,
+} from "@/modules/segnalazioni/ui";
+import { defaultDraft, mockCommunications, roleGroups, roleLabels } from "./mock";
 import type { AppTab, DraftReport, SafetyCommunication, SegnalatoreReport, SegnalatoreRoleGroup } from "./types";
 
 function normalizeRole(role?: string | null) {
@@ -21,17 +33,30 @@ export function useSegnalatoreApp(role?: string) {
   const [activeTab, setActiveTab] = useState<AppTab>("new");
   const [draft, setDraft] = useState<DraftReport>(defaultDraft);
   const [attachments, setAttachments] = useState<string[]>([]);
-  const [reports, setReports] = useState<SegnalatoreReport[]>(mockReports);
   const [communications, setCommunications] = useState<SafetyCommunication[]>(mockCommunications);
-  const [selectedCode, setSelectedCode] = useState(mockReports[0]?.code ?? "");
+  const [selectedReportId, setSelectedReportId] = useState("");
   const [message, setMessage] = useState("");
+  const [createErrorMessage, setCreateErrorMessage] = useState("");
 
-  const visibleReports = useMemo(
-    () => reports.filter((report) => report.visibleTo.includes(roleGroup)),
-    [reports, roleGroup],
-  );
+  const reportsQuery = useSegnalazioni();
+  const detailQuery = useSegnalazioneDetail(selectedReportId || undefined);
+  const createReport = useCreateSegnalazione({
+    onSuccess: (createdId) => {
+      setSelectedReportId(createdId);
+      setDraft(defaultDraft);
+      setAttachments([]);
+      setCreateErrorMessage("");
+      setActiveTab("reports");
+      setMessage(CREATE_SUCCESS_MESSAGE);
+    },
+  });
 
-  const selectedReport = visibleReports.find((report) => report.code === selectedCode) ?? visibleReports[0];
+  const visibleReports = reportsQuery.reports;
+
+  const selectedReport = detailQuery.report ?? visibleReports.find((report) => report.id === selectedReportId);
+  const listErrorMessage = reportsQuery.error ? getFriendlySegnalazioniError(LIST_ERROR_MESSAGE) : "";
+  const detailErrorMessage = detailQuery.error ? getFriendlySegnalazioniError(DETAIL_ERROR_MESSAGE) : "";
+  const isCreateDisabled = createReport.isPending;
 
   const handleDraftChange = (field: keyof DraftReport) => (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -40,47 +65,38 @@ export function useSegnalatoreApp(role?: string) {
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const fileNames = Array.from(event.target.files ?? []).map((file) => file.name);
-    if (fileNames.length) {
-      setAttachments(fileNames);
-      setMessage("Allegati selezionati solo localmente: nessun file e' stato caricato.");
-    }
+    setAttachments([]);
+    setMessage(ATTACHMENTS_DISABLED_MESSAGE);
     event.target.value = "";
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!draft.location.trim() || !draft.title.trim() || !draft.description.trim()) {
-      setMessage("Compila Appalto / Commessa / Impianto, Titolo e Descrizione.");
+    if (createReport.isPending) return;
+
+    if (!draft.title.trim() || !draft.description.trim()) {
+      setCreateErrorMessage("Compila Titolo e Descrizione.");
       return;
     }
 
-    const newReport: SegnalatoreReport = {
-      code: `SEG-LOCAL-${String(reports.length + 1).padStart(3, "0")}`,
-      title: draft.title.trim(),
-      status: "Nuova",
-      priority: draft.priority,
-      date: "Oggi",
-      location: draft.location.trim(),
-      update: attachments.length
-        ? `Bozza locale con ${attachments.length} allegato/i non caricati`
-        : "Bozza locale non collegata al backend LogosSafety",
-      description: draft.description.trim(),
-      visibleTo: ["operational", "manager", "safety"],
-    };
-
-    setReports((current) => [newReport, ...current]);
-    setSelectedCode(newReport.code);
-    setDraft(defaultDraft);
-    setAttachments([]);
-    setActiveTab("reports");
-    setMessage("Segnalazione creata solo localmente: backend LogosSafety non ancora collegato.");
+    setCreateErrorMessage("");
+    setMessage("");
+    createReport.createSegnalazione(draft);
   };
 
   const handleAction = (action: string, report: SegnalatoreReport) => {
-    setSelectedCode(report.code);
-    setMessage(`${action} su ${report.code}: azione UI-only, nessuna API chiamata.`);
+    setSelectedReportId(report.id);
+    if (action === "Visualizza") {
+      setMessage("");
+      return;
+    }
+    setMessage(`${action} su ${report.code}: azione non ancora collegata al workflow backend.`);
+  };
+
+  const handleBackToList = () => {
+    setSelectedReportId("");
+    setMessage("");
   };
 
   const handleCommunicationOpen = (communication: SafetyCommunication) => {
@@ -109,18 +125,28 @@ export function useSegnalatoreApp(role?: string) {
     activeTab,
     attachments,
     communications,
+    createErrorMessage: createErrorMessage || (createReport.error ? getFriendlySegnalazioniError(CREATE_ERROR_MESSAGE) : ""),
     draft,
+    emptyListMessage: EMPTY_LIST_MESSAGE,
+    isCreateDisabled,
+    isDetailLoading: detailQuery.isLoading || detailQuery.isFetching,
+    isReportsLoading: reportsQuery.isLoading,
     message,
     roleGroup,
     roleLabel,
+    detailErrorMessage,
+    listErrorMessage,
     selectedReport,
     visibleReports,
     handleAction,
+    handleBackToList,
     handleCommunicationAcknowledgement,
     handleCommunicationOpen,
     handleDraftChange,
     handleFileChange,
     handleSubmit,
+    refetchReports: reportsQuery.refetch,
+    refetchSelectedReport: detailQuery.refetch,
     setActiveTab,
   };
 }

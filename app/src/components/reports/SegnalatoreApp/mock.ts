@@ -1,59 +1,10 @@
-import type { DraftReport, SafetyCommunication, SegnalatoreReport, SegnalatoreRoleGroup } from "./types";
+import type { DraftReport, SafetyCommunication, SegnalatoreRoleGroup } from "./types";
 
 export const defaultDraft: DraftReport = {
-  location: "",
   title: "",
   description: "",
   priority: "Media",
 };
-
-// Mock temporanei: sostituire con API LogosSafety in sprint successivo.
-export const mockReports: SegnalatoreReport[] = [
-  {
-    code: "SEG-2026-014",
-    title: "Transenna danneggiata in area carico",
-    status: "In carico",
-    priority: "Alta",
-    date: "08 lug 2026",
-    location: "Appalto Milano - Impianto Nord",
-    update: "Presa in carico dal team sicurezza",
-    description: "La transenna vicino alla baia di carico risulta piegata e instabile.",
-    visibleTo: ["operational", "manager", "safety"],
-  },
-  {
-    code: "SEG-2026-012",
-    title: "Richiesta integrazione foto DPI",
-    status: "In attesa integrazione",
-    priority: "Media",
-    date: "07 lug 2026",
-    location: "Commessa Torino - Linea 2",
-    update: "Richiesta una foto aggiuntiva dell'area",
-    description: "La segnalazione richiede una seconda foto per completare la verifica.",
-    visibleTo: ["operational", "manager", "safety"],
-  },
-  {
-    code: "SEG-2026-009",
-    title: "Verifica passaggio pedonale interno",
-    status: "Nuova",
-    priority: "Bassa",
-    date: "05 lug 2026",
-    location: "Impianto Bologna",
-    update: "In attesa di prima valutazione",
-    description: "Il passaggio pedonale necessita di nuova segnaletica orizzontale.",
-    visibleTo: ["manager", "safety"],
-  },
-  {
-    code: "SEG-2026-006",
-    title: "Chiusura intervento parapetto",
-    status: "Chiusa",
-    priority: "Alta",
-    date: "02 lug 2026",
-    location: "Appalto Roma - Copertura",
-    update: "Intervento chiuso con evidenza allegata",
-    description: "Il parapetto provvisorio e' stato sostituito con protezione certificata.",
-    visibleTo: ["safety"],
-  },
-];
 
 // Mock temporanei: sostituire con API Comunicazioni Sicurezza in sprint successivo.
 export const mockCommunications: SafetyCommunication[] = [

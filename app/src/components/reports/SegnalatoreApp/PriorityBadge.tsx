@@ -5,6 +5,7 @@ const priorityClasses: Record<ReportPriority, string> = {
   Bassa: "bg-emerald-50 text-emerald-700",
   Media: "bg-amber-50 text-amber-700",
   Alta: "bg-red-50 text-red-700",
+  Critica: "bg-red-100 text-red-800",
 };
 
 type PriorityBadgeProps = {

@@ -89,7 +89,7 @@ export function createSegnalazioniRouter(
           const deps = dependencyFactory(ctx);
           const organizationalScope = normalizedInput.organizationalScope
             ? buildScopeFromInput(actor, normalizedInput.organizationalScope)
-            : actor.organizationalScope;
+            : undefined;
 
           const visibleReports: Segnalazione[] = unwrapResult(await deps.listVisibleSegnalazioni({
             actor,

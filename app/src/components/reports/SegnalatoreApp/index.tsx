@@ -35,8 +35,10 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
         <NuovaSegnalazioneTab
           attachments={state.attachments}
           draft={state.draft}
+          errorMessage={state.createErrorMessage}
           idPrefix={idPrefix}
           isMobile={isMobile}
+          isSubmitting={state.isCreateDisabled}
           onDraftChange={state.handleDraftChange}
           onFileChange={state.handleFileChange}
           onSubmit={state.handleSubmit}
@@ -48,9 +50,17 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
           isMobile={isMobile}
           roleGroup={state.roleGroup}
           roleLabel={state.roleLabel}
+          detailErrorMessage={state.detailErrorMessage}
+          emptyListMessage={state.emptyListMessage}
+          isDetailLoading={state.isDetailLoading}
+          isReportsLoading={state.isReportsLoading}
+          listErrorMessage={state.listErrorMessage}
           selectedReport={state.selectedReport}
           visibleReports={state.visibleReports}
           onAction={state.handleAction}
+          onBackToList={state.handleBackToList}
+          onRetryDetail={state.refetchSelectedReport}
+          onRetryList={state.refetchReports}
         />
       )}
 

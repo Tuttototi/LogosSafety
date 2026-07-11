@@ -7,76 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FloatingSmartphone } from "@/components/reports/FloatingSmartphone";
 import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp/index";
-
-type ReportStatus = "Nuova" | "In lavorazione" | "In attesa" | "Richiesta chiusura" | "Chiusa";
-type ReportPriority = "Bassa" | "Media" | "Alta" | "Critica";
-type ReportCategory = "Infortuni" | "Pericolo" | "Attrezzature" | "Ambiente" | "Procedura";
-
-type ReportItem = {
-  id: number;
-  code: string;
-  title: string;
-  description: string;
-  category: ReportCategory;
-  priority: ReportPriority;
-  status: ReportStatus;
-  location: string;
-  createdAt: string;
-  reporter: string;
-  attachments: string[];
-  evidence: string[];
-};
-
-const initialReports: ReportItem[] = [
-  {
-    id: 1,
-    code: "SR-2026-001",
-    title: "Presenza di corda sospesa in area magazzino",
-    description: "Rilevata una corda sospesa in prossimità del ponteggio. L’area è stata immediatamente delimitata.",
-    category: "Pericolo",
-    priority: "Alta",
-    status: "In lavorazione",
-    location: "Magazzino Centrale",
-    createdAt: "02 lug 2026",
-    reporter: "Marco B.",
-    attachments: ["foto_01.jpg", "verifica.pdf"],
-    evidence: ["Segnalazione ricevuta alle 09:12", "Presa in carico alle 09:16", "Verifica in corso"],
-  },
-  {
-    id: 2,
-    code: "SR-2026-002",
-    title: "Guasto alla lampada di emergenza",
-    description: "La lampada nel corridoio principale non si accende. Richiesta verifica elettrica.",
-    category: "Attrezzature",
-    priority: "Media",
-    status: "Nuova",
-    location: "Corridoio 2",
-    createdAt: "03 lug 2026",
-    reporter: "Sara L.",
-    attachments: ["foto_02.jpg"],
-    evidence: ["Segnalazione ricevuta alle 14:08"],
-  },
-  {
-    id: 3,
-    code: "SR-2026-003",
-    title: "Rilevamento di acqua in area cantiere",
-    description: "Presenza di ristagno vicino al punto di accesso. Richiesta intervento pulizia e sicurezza.",
-    category: "Ambiente",
-    priority: "Critica",
-    status: "Richiesta chiusura",
-    location: "Cantiere Nord",
-    createdAt: "04 lug 2026",
-    reporter: "Luca P.",
-    attachments: ["report_03.pdf", "foto_03.jpg"],
-    evidence: ["Segnalazione ricevuta alle 07:30", "Chiusura richiesta dalle 11:40"],
-  },
-];
+import {
+  ATTACHMENTS_DISABLED_MESSAGE,
+  EMPTY_LIST_MESSAGE,
+  LIST_ERROR_MESSAGE,
+  useSegnalazioneDetail,
+  useSegnalazioni,
+  type ReportPriority,
+  type ReportStatus,
+  type SegnalatoreReport,
+} from "@/modules/segnalazioni/ui";
 
 const statusColors: Record<ReportStatus, string> = {
   Nuova: "bg-slate-100 text-slate-700",
+  "Presa in carico": "bg-blue-100 text-blue-700",
   "In lavorazione": "bg-amber-100 text-amber-700",
-  "In attesa": "bg-blue-100 text-blue-700",
-  "Richiesta chiusura": "bg-purple-100 text-purple-700",
+  "Richiesta integrazione": "bg-orange-100 text-orange-700",
+  Integrata: "bg-purple-100 text-purple-700",
+  Risolta: "bg-emerald-100 text-emerald-700",
   Chiusa: "bg-emerald-100 text-emerald-700",
 };
 
@@ -88,12 +36,16 @@ const priorityColors: Record<ReportPriority, string> = {
 };
 
 export default function Segnalazioni() {
-  const [reports] = useState(initialReports);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ReportStatus>("all");
   const [priorityFilter, setPriorityFilter] = useState<"all" | ReportPriority>("all");
-  const [selectedReport, setSelectedReport] = useState<ReportItem>(initialReports[0]);
+  const [selectedReportId, setSelectedReportId] = useState("");
   const [showPhone, setShowPhone] = useState(false);
+  const reportsQuery = useSegnalazioni();
+  const selectedFromList = reportsQuery.reports.find((report) => report.id === selectedReportId) ?? reportsQuery.reports[0];
+  const detailQuery = useSegnalazioneDetail(selectedFromList?.id);
+  const selectedReport: SegnalatoreReport | undefined = detailQuery.report ?? selectedFromList;
+  const reports = reportsQuery.reports;
 
   const filteredReports = useMemo(() => {
     return reports.filter((report) => {
@@ -163,8 +115,8 @@ export default function Segnalazioni() {
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-2xl font-semibold text-slate-900">{reports.filter((report) => report.status === "Richiesta chiusura").length}</p>
-                <p className="mt-1 text-sm text-slate-500">Da chiudere</p>
+                <p className="text-2xl font-semibold text-slate-900">{reports.filter((report) => report.status === "Richiesta integrazione").length}</p>
+                <p className="mt-1 text-sm text-slate-500">In integrazione</p>
               </div>
               <BadgeCheck className="h-8 w-8 text-blue-500" />
             </div>
@@ -203,8 +155,10 @@ export default function Segnalazioni() {
                       <option value="all">Tutti gli stati</option>
                       <option value="Nuova">Nuova</option>
                       <option value="In lavorazione">In lavorazione</option>
-                      <option value="In attesa">In attesa</option>
-                      <option value="Richiesta chiusura">Richiesta chiusura</option>
+                      <option value="Presa in carico">Presa in carico</option>
+                      <option value="Richiesta integrazione">Richiesta integrazione</option>
+                      <option value="Integrata">Integrata</option>
+                      <option value="Risolta">Risolta</option>
                       <option value="Chiusa">Chiusa</option>
                     </select>
                   </div>
@@ -223,8 +177,24 @@ export default function Segnalazioni() {
               </div>
 
               <div className="space-y-2">
-                {filteredReports.map((report) => (
-                  <button key={report.id} type="button" className={`w-full rounded-2xl border p-4 text-left transition ${selectedReport?.id === report.id ? "border-red-200 bg-red-50" : "border-slate-200 bg-white hover:border-red-200 hover:bg-slate-50"}`} onClick={() => setSelectedReport(report)}>
+                {reportsQuery.isLoading && (
+                  <>
+                    <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+                    <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+                  </>
+                )}
+
+                {!reportsQuery.isLoading && reportsQuery.error && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    <p>{LIST_ERROR_MESSAGE}</p>
+                    <button type="button" className="mt-2 font-semibold underline" onClick={() => reportsQuery.refetch()}>
+                      Riprova
+                    </button>
+                  </div>
+                )}
+
+                {!reportsQuery.isLoading && !reportsQuery.error && filteredReports.map((report) => (
+                  <button key={report.id} type="button" className={`w-full rounded-2xl border p-4 text-left transition ${selectedReport?.id === report.id ? "border-red-200 bg-red-50" : "border-slate-200 bg-white hover:border-red-200 hover:bg-slate-50"}`} onClick={() => setSelectedReportId(report.id)}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{report.code}</p>
@@ -233,13 +203,13 @@ export default function Segnalazioni() {
                       <Badge className={statusColors[report.status]}>{report.status}</Badge>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{report.createdAt}</span>
+                      <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{report.date}</span>
                       <span className="inline-flex items-center gap-1"><FileText className="h-3.5 w-3.5" />{report.location}</span>
                       <Badge className={priorityColors[report.priority]}>{report.priority}</Badge>
                     </div>
                   </button>
                 ))}
-                {!filteredReports.length && <p className="rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">Nessuna segnalazione corrisponde ai filtri impostati.</p>}
+                {!reportsQuery.isLoading && !reportsQuery.error && !filteredReports.length && <p className="rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">{EMPTY_LIST_MESSAGE}</p>}
               </div>
             </CardContent>
           </Card>
@@ -251,47 +221,61 @@ export default function Segnalazioni() {
               <CardTitle className="text-base font-semibold text-slate-900">Dettaglio segnalazione</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{selectedReport.code}</p>
-                  <h2 className="text-lg font-semibold text-slate-900">{selectedReport.title}</h2>
+              {detailQuery.isLoading && <div className="h-64 animate-pulse rounded-2xl bg-slate-100" />}
+              {!detailQuery.isLoading && detailQuery.error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  <p>Impossibile caricare il dettaglio. Riprova.</p>
+                  <button type="button" className="mt-2 font-semibold underline" onClick={() => detailQuery.refetch()}>
+                    Riprova
+                  </button>
                 </div>
-                <Badge className={statusColors[selectedReport.status]}>{selectedReport.status}</Badge>
-              </div>
-              <p className="text-sm leading-6 text-slate-600">{selectedReport.description}</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Categoria</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{selectedReport.category}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Priorità</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{selectedReport.priority}</p>
-                </div>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Luogo e referente</p>
-                <p className="mt-1 text-sm text-slate-700">{selectedReport.location} · {selectedReport.reporter}</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Allegati e foto</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {selectedReport.attachments.map((attachment) => (
-                    <Badge key={attachment} variant="outline" className="bg-white text-slate-600">{attachment}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Timeline</p>
-                <div className="mt-2 space-y-2">
-                  {selectedReport.evidence.map((step, index) => (
-                    <div key={`${step}-${index}`} className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-red-600"><CheckCircle2 className="h-4 w-4" /></div>
-                      <span>{step}</span>
+              )}
+              {!detailQuery.isLoading && !detailQuery.error && selectedReport && (
+                <>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{selectedReport.code}</p>
+                      <h2 className="text-lg font-semibold text-slate-900">{selectedReport.title}</h2>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <Badge className={statusColors[selectedReport.status]}>{selectedReport.status}</Badge>
+                  </div>
+                  <p className="text-sm leading-6 text-slate-600">{selectedReport.description}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Categoria</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">{selectedReport.category}</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Priorità</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">{selectedReport.priority}</p>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Luogo e referente</p>
+                    <p className="mt-1 text-sm text-slate-700">
+                      {selectedReport.location}{selectedReport.reporterDisplayName ? ` · ${selectedReport.reporterDisplayName}` : ""}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Allegati e foto</p>
+                    <p className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+                      {ATTACHMENTS_DISABLED_MESSAGE}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Timeline</p>
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-600">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-100 text-red-600"><CheckCircle2 className="h-4 w-4" /></div>
+                        <span>{selectedReport.update}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              {!detailQuery.isLoading && !detailQuery.error && !selectedReport && (
+                <p className="text-sm text-slate-500">{EMPTY_LIST_MESSAGE}</p>
+              )}
             </CardContent>
           </Card>
 
