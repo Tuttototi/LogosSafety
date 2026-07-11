@@ -8,6 +8,17 @@
 
 ## Aggiornamento operativo — 11 luglio 2026
 
+Collegato il primo boundary backend del modulo Segnalazioni a LogosSafety:
+
+- aggiunto router tRPC `segnalazioni` con procedure `create`, `list` e `byId`;
+- collegati i casi d'uso applicativi a `DrizzleSegnalazioniRepository`;
+- costruito `SegnalazioniActor` esclusivamente da `ctx.user`, con adapter temporaneo tenant/company/person lato server;
+- bloccato input client per tenant, company, ruolo e autore tramite Zod strict;
+- aggiunto mapping errori applicativi verso codici tRPC e sanitizzazione degli errori inattesi;
+- aggiunti test automatici su autenticazione, tenant isolation, scope operativo, autore, paginazione, validazione e no leakage;
+- documentata l'API in `docs/api/SEGNALAZIONI_API.md`;
+- nessuna modifica a UI, routing frontend, PHP, schema DB, migrazioni o auth.
+
 Validata la persistenza Segnalazioni su database MySQL locale isolato:
 
 - creato container Docker locale `logos-safety-mysql` con MySQL 8.4 e database `logos_safety`;

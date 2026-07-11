@@ -9,6 +9,7 @@ import { brandingRouter } from "./branding-router";
 import { documentRouter } from "./document-router";
 import { auditRouter } from "./audit-router";
 import { importRouter } from "./import-router";
+import { segnalazioniRouter } from "./segnalazioni";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -24,6 +25,7 @@ export const appRouter = createRouter({
   documents: documentRouter,
   audit: auditRouter,
   import: importRouter,
+  segnalazioni: segnalazioniRouter,
 });
 
 export type AppRouter = typeof appRouter;

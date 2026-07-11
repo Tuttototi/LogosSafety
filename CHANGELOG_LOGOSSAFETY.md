@@ -2,6 +2,15 @@
 
 ## 11 luglio 2026
 
+### Segnalazioni — API tRPC backend
+
+- Esposte le procedure backend `segnalazioni.create`, `segnalazioni.list` e `segnalazioni.byId` tramite Hono/tRPC.
+- Collegati i casi d'uso applicativi Segnalazioni al repository persistente `DrizzleSegnalazioniRepository`.
+- Aggiunto adapter temporaneo server-side dall'utente autenticato LogosSafety legacy a `SegnalazioniActor`, senza accettare tenant, company, ruolo o autore dal client.
+- Aggiunti schema Zod strict, DTO, mapping errori applicativi verso tRPC e test Vitest sul boundary API.
+- Documentata l'API in `docs/api/SEGNALAZIONI_API.md`.
+- Nessuna modifica a UI React, routing frontend, PHP, database, migrazioni o autenticazione.
+
 ### Segnalazioni — validazione persistenza MySQL locale
 
 - Avviato container Docker locale `logos-safety-mysql` con MySQL 8.4 e database `logos_safety`.

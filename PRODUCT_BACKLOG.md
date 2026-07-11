@@ -8,6 +8,7 @@
 |---|---|---|
 | Architettura | Definire Application Context, ownership dati, eventi e confini moduli | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
+| Segnalazioni | Esporre API backend tRPC per creazione, lista e dettaglio con repository persistente | Completato |
 | Segnalazioni | Validare migrazione e repository persistente su database MySQL locale isolato | Completato |
 | Segnalazioni | Implementare schema Drizzle e repository persistente non collegato alla UI | Completato |
 | Segnalazioni | Definire application layer con use case e ports astratti | Completato |
@@ -43,7 +44,7 @@
 | Aziende | Registrare audit diff campo per campo su update/import | Migliora tracciabilità cliente | Aperto |
 | Sedi | Completare UI create/edit | Completa CRUD Sedi | Aperto |
 | Lavoratori | Completare UI CRUD e import/export coerenti | Priorità prodotto successiva | Aperto |
-| Segnalazioni | Collegare use case e repository persistente a endpoint backend LogosSafety con audit, permessi e allegati reali | Completa il flusso operativo senza legacy PHP | Aperto |
+| Segnalazioni | Completare endpoint backend Segnalazioni per audit atomico, allegati reali, commenti e workflow operativo | Completa il flusso operativo senza legacy PHP | Aperto |
 | Core Domain | Definire adapter legacy da users/workers/companies al Core Domain | Necessario per migrare senza rompere auth e moduli esistenti | Aperto |
 | Sicurezza | Definire matrice RBAC ruolo-permesso basata su Core Domain | Necessario per sostituire gerarchie ruolo hardcoded | Aperto |
 | Architettura | Introdurre outbox/event bus interno per eventi cross-module | Necessario per Audit Log, Notifiche, Scadenze e read model | Aperto |
