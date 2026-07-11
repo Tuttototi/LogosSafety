@@ -52,20 +52,40 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
 
       {state.activeTab === "reports" && (
         <SegnalazioniTab
+          closingNote={state.closingNote}
+          commentText={state.commentText}
           isMobile={isMobile}
           roleGroup={state.roleGroup}
           roleLabel={state.roleLabel}
           detailErrorMessage={state.detailErrorMessage}
           emptyListMessage={state.emptyListMessage}
+          integrationRequestText={state.integrationRequestText}
+          integrationText={state.integrationText}
           isDetailLoading={state.isDetailLoading}
           isReportsLoading={state.isReportsLoading}
+          isWorkflowActionPending={state.isWorkflowActionPending}
           listErrorMessage={state.listErrorMessage}
+          resolutionNote={state.resolutionNote}
           selectedReport={state.selectedReport}
           visibleReports={state.visibleReports}
+          workflowErrorMessage={state.workflowErrorMessage}
           onAction={state.handleAction}
+          onAcknowledge={state.handleAcknowledge}
           onBackToList={state.handleBackToList}
+          onChangeStatus={state.handleChangeStatus}
+          onClose={state.handleClose}
+          onClosingNoteChange={state.setClosingNote}
+          onCommentSubmit={state.handleCommentSubmit}
+          onCommentTextChange={state.setCommentText}
+          onIntegrate={state.handleIntegrate}
+          onIntegrationRequestTextChange={state.setIntegrationRequestText}
+          onIntegrationTextChange={state.setIntegrationText}
+          onRequestIntegration={state.handleRequestIntegration}
+          onResolve={state.handleResolve}
+          onResolutionNoteChange={state.setResolutionNote}
           onRetryDetail={state.refetchSelectedReport}
           onRetryList={state.refetchReports}
+          onTakeInCharge={state.handleTakeInCharge}
         />
       )}
 

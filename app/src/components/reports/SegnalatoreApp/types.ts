@@ -9,9 +9,13 @@ export type {
   ReportPriority,
   ReportStatus,
   SafetyCommunication,
+  SegnalazioneCapabilitiesDto,
+  SegnalazioneCommentDto,
+  SegnalazioneTimelineItemDto,
   SegnalatoreAppProps,
   SegnalatoreAppVariant,
   SegnalatoreReport,
   SegnalatoreRoleGroup,
   SubmitHandler,
+  TimelineEventType,
 } from "@/modules/segnalazioni/ui";

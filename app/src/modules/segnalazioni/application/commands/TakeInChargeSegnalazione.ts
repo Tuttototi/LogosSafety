@@ -1,4 +1,5 @@
 import { StatoSegnalazione } from "../../domain";
+import { ApplicationErrorCode, fail } from "../errors/ApplicationError";
 import type { ApplicationResult } from "../errors/ApplicationError";
 import type { SegnalazioniUseCaseDependencies } from "../dependencies";
 import { ApplicationEventType, type SegnalazioneActionInput } from "../types";
@@ -11,6 +12,12 @@ export function createTakeInChargeSegnalazioneUseCase(deps: SegnalazioniUseCaseD
   ): Promise<ApplicationResult<Segnalazione>> {
     const loadResult = await loadVisibleSegnalazione(deps, input.actor, input.id);
     if (!loadResult.success) return loadResult;
+    if (loadResult.data.status !== StatoSegnalazione.Nuova) {
+      return fail(ApplicationErrorCode.Conflict, "Segnalazione is no longer available for take in charge", {
+        id: input.id,
+        currentStatus: loadResult.data.status,
+      });
+    }
 
     const assigned = {
       ...loadResult.data,
@@ -28,4 +35,3 @@ export function createTakeInChargeSegnalazioneUseCase(deps: SegnalazioniUseCaseD
     );
   };
 }
-

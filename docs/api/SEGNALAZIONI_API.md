@@ -8,6 +8,14 @@ Il modulo Segnalazioni espone il primo boundary backend LogosSafety tramite tRPC
 - `segnalazioni.list`
 - `segnalazioni.byId`
 - `segnalazioni.availableScope`
+- `segnalazioni.addComment`
+- `segnalazioni.requestIntegration`
+- `segnalazioni.integrate`
+- `segnalazioni.takeInCharge`
+- `segnalazioni.changeStatus`
+- `segnalazioni.resolve`
+- `segnalazioni.close`
+- `segnalazioni.acknowledge`
 
 Gli endpoint usano i casi d'uso applicativi esistenti e il repository persistente `DrizzleSegnalazioniRepository`.
 Non introducono UI, API pubbliche anonime, PHP, sessioni PHP, upload reali o bridge legacy.
@@ -189,7 +197,40 @@ Comportamento:
 
 - usa `createGetSegnalazioneByIdUseCase`;
 - il dominio blocca accessi cross-tenant o fuori scope;
+- restituisce commenti, timeline persistita, capability server-side e stato presa visione;
 - gli errori non espongono dettagli di persistenza.
+
+### Procedure workflow
+
+Tutte le procedure sono protette e costruiscono l'attore da backend:
+
+| Procedura | Input client | Effetto |
+|---|---|---|
+| `addComment` | `{ id, text }` | aggiunge commento reale |
+| `requestIntegration` | `{ id, message }` | transizione a `Richiesta integrazione` |
+| `integrate` | `{ id, message }` | risposta del segnalatore e transizione a `Integrata` |
+| `takeInCharge` | `{ id }` | presa in carico e assegnazione responsabile |
+| `changeStatus` | `{ id, targetStatus }` | transizione richiesta, validata dal backend |
+| `resolve` | `{ id, resolutionNote }` | transizione a `Risolta` |
+| `close` | `{ id, closingNote? }` | transizione a `Chiusa` e valorizzazione `closedAt` |
+| `acknowledge` | `{ id }` | presa visione idempotente lato UX |
+
+Il client non puo' inviare autore, tenant, company, ruolo, previous status, force o override.
+
+Il dettaglio espone capability:
+
+```ts
+{
+  canComment: boolean;
+  canTakeInCharge: boolean;
+  canRequestIntegration: boolean;
+  canIntegrate: boolean;
+  canResolve: boolean;
+  canClose: boolean;
+  canAcknowledge: boolean;
+  allowedStatusTransitions: StatoSegnalazione[];
+}
+```
 
 ## Error mapping
 

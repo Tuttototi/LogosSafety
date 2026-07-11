@@ -5,6 +5,8 @@ import { ApplicationEventType, type IntegrateSegnalazioneInput } from "../types"
 import { applyStatusTransition, loadVisibleSegnalazione, makeComment, makeEvent, recordEvent } from "../helpers";
 import type { Segnalazione } from "../../domain";
 
+const MAX_INTEGRATION_TEXT_LENGTH = 2000;
+
 function hasIntegrationContent(input: IntegrateSegnalazioneInput): boolean {
   return Boolean(input.text?.trim() || input.attachments?.length);
 }
@@ -15,6 +17,12 @@ export function createIntegrateSegnalazioneUseCase(deps: SegnalazioniUseCaseDepe
   ): Promise<ApplicationResult<Segnalazione>> {
     if (!hasIntegrationContent(input)) {
       return fail(ApplicationErrorCode.ValidationError, "Integration text or attachment is required");
+    }
+    const text = input.text?.trim();
+    if (text && text.length > MAX_INTEGRATION_TEXT_LENGTH) {
+      return fail(ApplicationErrorCode.ValidationError, "Integration text is too long", {
+        maxLength: MAX_INTEGRATION_TEXT_LENGTH,
+      });
     }
 
     const loadResult = await loadVisibleSegnalazione(deps, input.actor, input.id);
@@ -29,7 +37,7 @@ export function createIntegrateSegnalazioneUseCase(deps: SegnalazioniUseCaseDepe
       input.actor,
       loadResult.data,
       StatoSegnalazione.Integrata,
-      input.text,
+      text,
     );
     if (!transitionResult.success) return transitionResult;
 
@@ -39,7 +47,7 @@ export function createIntegrateSegnalazioneUseCase(deps: SegnalazioniUseCaseDepe
           deps,
           input.actor,
           loadResult.data,
-          input.text?.trim() || "Integrazione con allegati",
+          text || "Integrazione con allegati",
           true,
         ),
         allegati: input.attachments,
@@ -55,4 +63,3 @@ export function createIntegrateSegnalazioneUseCase(deps: SegnalazioniUseCaseDepe
     return ok(transitionResult.data);
   };
 }
-

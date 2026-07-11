@@ -108,6 +108,14 @@ export function canCommentSegnalazione(actor: SegnalazioniActor, segnalazione: S
  * Managing is reserved to safety/admin roles inside the tenant and company boundary.
  */
 export function canManageSegnalazione(actor: SegnalazioniActor, segnalazione: Segnalazione): boolean {
-  return canAccessScope(actor, segnalazione.organizationalScope) && hasRole(actor.role, MANAGEMENT_ROLES);
-}
+  if (!canAccessScope(actor, segnalazione.organizationalScope)) return false;
+  if (hasRole(actor.role, MANAGEMENT_ROLES)) return true;
+  if (actor.role === SegnalazioniRole.CapoImpianto) {
+    return hasPlantScope(actor, segnalazione.organizationalScope);
+  }
+  if (hasRole(actor.role, AREA_SCOPE_ROLES)) {
+    return isWithinAnyOrganizationalScope(segnalazione.organizationalScope, getActorScopes(actor));
+  }
 
+  return false;
+}

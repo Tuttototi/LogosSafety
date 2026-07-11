@@ -8,6 +8,7 @@
 - creazione nuova segnalazione;
 - dettaglio segnalazione;
 - contesti operativi selezionabili tramite `segnalazioni.availableScope`.
+- commenti, timeline e workflow operativo tramite capability backend.
 
 La stessa app e' montata in:
 
@@ -22,7 +23,7 @@ La pagina `/segnalazioni` usa lo stesso layer dati frontend e non mantiene piu' 
 SegnalatoreApp React
   -> hooks UI Segnalazioni
   -> tRPC client esistente
-  -> segnalazioni.availableScope/create/list/byId
+  -> segnalazioni.availableScope/create/list/byId/workflow mutations
   -> Application use cases
   -> DrizzleSegnalazioniRepository
   -> MySQL locale/ambiente configurato
@@ -117,13 +118,17 @@ La UI gestisce:
 - feedback successo;
 - errore create user-friendly;
 - dettaglio con loading, errore e ritorno alla lista;
+- commenti reali nel dettaglio;
+- timeline compatta da dati persistiti;
+- azioni mostrate solo secondo `capabilities`;
+- presa visione idempotente lato UX;
 - Comunicazioni mock invariato.
 
 ## Limiti residui
 
 - plant usa temporaneamente i dati reali di `microclimate_sites`;
 - aree operative non ancora disponibili nello schema attuale;
-- commenti, workflow, prese in carico e chiusure non sono ancora collegati;
+- AuditPort e NotificationPort restano deferred, senza outbox persistente;
 - allegati reali non disponibili;
 - Comunicazioni Sicurezza non hanno ancora backend;
 - il runtime locale richiede che il Core Identity Context risolva un worker/persona collegato all'utente autenticato;

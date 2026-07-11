@@ -1,18 +1,16 @@
 import { Clock3, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { actionsByGroup } from "./mock";
 import { PriorityBadge } from "./PriorityBadge";
 import { StatusBadge } from "./StatusBadge";
-import type { ReportActionHandler, SegnalatoreReport, SegnalatoreRoleGroup } from "./types";
+import type { ReportActionHandler, SegnalatoreReport } from "./types";
 
 type SegnalazioneCardProps = {
   isSelected: boolean;
   report: SegnalatoreReport;
-  roleGroup: SegnalatoreRoleGroup;
   onAction: ReportActionHandler;
 };
 
-export function SegnalazioneCard({ isSelected, report, roleGroup, onAction }: Readonly<SegnalazioneCardProps>) {
+export function SegnalazioneCard({ isSelected, report, onAction }: Readonly<SegnalazioneCardProps>) {
   return (
     <article className={cn("rounded-xl border p-3 transition", isSelected ? "border-red-200 bg-red-50" : "border-slate-200 bg-white")}>
       <div className="flex items-start justify-between gap-3">
@@ -36,16 +34,13 @@ export function SegnalazioneCard({ isSelected, report, roleGroup, onAction }: Re
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <PriorityBadge priority={report.priority} />
-        {actionsByGroup[roleGroup].map((action) => (
-          <button
-            key={`${report.code}-${action}`}
-            type="button"
-            className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-700"
-            onClick={() => onAction(action, report)}
-          >
-            {action}
-          </button>
-        ))}
+        <button
+          type="button"
+          className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 transition hover:border-red-200 hover:text-red-700"
+          onClick={() => onAction("Visualizza", report)}
+        >
+          Visualizza
+        </button>
       </div>
     </article>
   );

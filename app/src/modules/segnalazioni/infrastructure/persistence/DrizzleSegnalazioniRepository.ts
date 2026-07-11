@@ -24,6 +24,7 @@ import type {
 import { SegnalazioniPersistenceError } from "./errors";
 import {
   mapAcknowledgementToInsert,
+  mapAcknowledgementRowToApplication,
   mapAttachmentRowToDomain,
   mapAttachmentToInsert,
   mapCommentRowToDomain,
@@ -243,11 +244,11 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
       .values(mapAcknowledgementToInsert(acknowledgement));
   }
 
-  async hasAcknowledgement(
+  async findAcknowledgement(
     segnalazioneId: DomainId,
     userId: DomainId,
     tenantId?: DomainId,
-  ): Promise<boolean> {
+  ): Promise<AcknowledgementRecord | null> {
     const filters: SQL[] = [
       eq(segnalazioneAcknowledgements.segnalazioneId, segnalazioneId),
       eq(segnalazioneAcknowledgements.userId, userId),
@@ -255,12 +256,39 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
     if (tenantId) filters.push(eq(segnalazioneAcknowledgements.tenantId, tenantId));
 
     const rows = await this.db
-      .select({ id: segnalazioneAcknowledgements.id })
+      .select()
       .from(segnalazioneAcknowledgements)
       .where(whereAll(filters))
       .limit(1);
 
-    return rows.length > 0;
+    const row = rows.at(0);
+    return row ? mapAcknowledgementRowToApplication(row) : null;
+  }
+
+  async listAcknowledgements(
+    segnalazioneId: DomainId,
+    tenantId?: DomainId,
+  ): Promise<AcknowledgementRecord[]> {
+    const filters: SQL[] = [
+      eq(segnalazioneAcknowledgements.segnalazioneId, segnalazioneId),
+    ];
+    if (tenantId) filters.push(eq(segnalazioneAcknowledgements.tenantId, tenantId));
+
+    const rows = await this.db
+      .select()
+      .from(segnalazioneAcknowledgements)
+      .where(whereAll(filters))
+      .orderBy(asc(segnalazioneAcknowledgements.acknowledgedAt));
+
+    return rows.map(mapAcknowledgementRowToApplication);
+  }
+
+  async hasAcknowledgement(
+    segnalazioneId: DomainId,
+    userId: DomainId,
+    tenantId?: DomainId,
+  ): Promise<boolean> {
+    return Boolean(await this.findAcknowledgement(segnalazioneId, userId, tenantId));
   }
 
   async existsByCode(code: string, tenantId?: DomainId): Promise<boolean> {

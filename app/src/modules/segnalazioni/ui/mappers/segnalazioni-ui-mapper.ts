@@ -25,6 +25,7 @@ export const OPERATIONAL_SCOPE_LOADING_MESSAGE = "Caricamento contesti operativi
 export const OPERATIONAL_SCOPE_EMPTY_MESSAGE = "Nessun appalto o impianto disponibile per il tuo profilo";
 export const OPERATIONAL_SCOPE_ERROR_MESSAGE = "Impossibile caricare i contesti operativi. Riprova.";
 export const OPERATIONAL_SCOPE_REQUIRED_MESSAGE = "Seleziona un appalto, sede o impianto disponibile.";
+export const WORKFLOW_ACTION_ERROR_MESSAGE = "Operazione non completata. Riprova.";
 
 export const DEFAULT_CREATE_CATEGORY = "Sicurezza" as const;
 export const DEFAULT_CREATE_TYPE = "Pericolo" as const;
@@ -70,6 +71,10 @@ export function mapDetailToReport(detail: SegnalazioneDetailDto): SegnalatoreRep
   return {
     ...mapListItemToReport(detail),
     description: detail.description,
+    comments: detail.comments ?? [],
+    timeline: detail.timeline ?? [],
+    capabilities: detail.capabilities,
+    acknowledgement: detail.acknowledgement,
   };
 }
 

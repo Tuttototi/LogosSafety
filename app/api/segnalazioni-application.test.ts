@@ -7,8 +7,10 @@ import {
   createCloseSegnalazioneUseCase,
   createCreateSegnalazioneUseCase,
   createGetSegnalazioneByIdUseCase,
+  createIntegrateSegnalazioneUseCase,
   createListVisibleSegnalazioniUseCase,
   createRequestIntegrationUseCase,
+  createResolveSegnalazioneUseCase,
   createTakeInChargeSegnalazioneUseCase,
   type AcknowledgementRecord,
   type ApplicationActor,
@@ -123,13 +125,25 @@ class FakeSegnalazioniRepository implements SegnalazioniRepository {
     this.acknowledgements.push(acknowledgement);
   }
 
-  async hasAcknowledgement(segnalazioneId: string, userId: string, tenantId?: string): Promise<boolean> {
-    return this.acknowledgements.some(
+  async findAcknowledgement(segnalazioneId: string, userId: string, tenantId?: string): Promise<AcknowledgementRecord | null> {
+    return this.acknowledgements.find(
       (acknowledgement) =>
         acknowledgement.segnalazioneId === segnalazioneId &&
         acknowledgement.userId === userId &&
         (!tenantId || acknowledgement.tenantId === tenantId),
+    ) ?? null;
+  }
+
+  async listAcknowledgements(segnalazioneId: string, tenantId?: string): Promise<AcknowledgementRecord[]> {
+    return this.acknowledgements.filter(
+      (acknowledgement) =>
+        acknowledgement.segnalazioneId === segnalazioneId &&
+        (!tenantId || acknowledgement.tenantId === tenantId),
     );
+  }
+
+  async hasAcknowledgement(segnalazioneId: string, userId: string, tenantId?: string): Promise<boolean> {
+    return Boolean(await this.findAcknowledgement(segnalazioneId, userId, tenantId));
   }
 
   async existsByCode(code: string, tenantId?: string): Promise<boolean> {
@@ -304,6 +318,26 @@ describe("segnalazioni application use cases", () => {
     }
   });
 
+  it("lets capo_area take in charge inside the assigned scope", async () => {
+    const actor = makeActor({ role: SegnalazioniRole.CapoArea });
+    const deps = makeDeps([makeSegnalazione()]);
+
+    const result = await createTakeInChargeSegnalazioneUseCase(deps)({ actor, id: "report-1" });
+
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.status).toBe(StatoSegnalazione.PresaInCarico);
+  });
+
+  it("returns conflict when a report is already taken in charge", async () => {
+    const actor = makeActor({ role: SegnalazioniRole.ResponsabileSicurezza });
+    const deps = makeDeps([makeSegnalazione({ status: StatoSegnalazione.PresaInCarico })]);
+
+    const result = await createTakeInChargeSegnalazioneUseCase(deps)({ actor, id: "report-1" });
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.code).toBe(ApplicationErrorCode.Conflict);
+  });
+
   it("blocks take in charge for a segnalatore", async () => {
     const actor = makeActor({ role: SegnalazioniRole.Segnalatore });
     const deps = makeDeps([makeSegnalazione()]);
@@ -352,6 +386,76 @@ describe("segnalazioni application use cases", () => {
     if (!result.success) expect(result.error.code).toBe(ApplicationErrorCode.ValidationError);
   });
 
+  it("requests integration from in lavorazione and records workflow", async () => {
+    const deps = makeDeps([makeSegnalazione({ status: StatoSegnalazione.InLavorazione })]);
+
+    const result = await createRequestIntegrationUseCase(deps)({
+      actor: makeActor({ role: SegnalazioniRole.ResponsabileSicurezza }),
+      id: "report-1",
+      reason: "Serve foto del parapetto.",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe(StatoSegnalazione.RichiestaIntegrazione);
+      expect(result.data.workflow?.at(-1)?.note).toBe("Serve foto del parapetto.");
+    }
+  });
+
+  it("lets the owner integrate a requested report", async () => {
+    const deps = makeDeps([makeSegnalazione({ status: StatoSegnalazione.RichiestaIntegrazione })]);
+
+    const result = await createIntegrateSegnalazioneUseCase(deps)({
+      actor: makeActor({ role: SegnalazioniRole.Segnalatore }),
+      id: "report-1",
+      text: "Ho aggiunto le informazioni richieste.",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe(StatoSegnalazione.Integrata);
+      expect(deps.repository.comments.at(-1)?.testo).toBe("Ho aggiunto le informazioni richieste.");
+    }
+  });
+
+  it("blocks ordinary users from integrating another user's report", async () => {
+    const deps = makeDeps([makeSegnalazione({
+      status: StatoSegnalazione.RichiestaIntegrazione,
+      createdByUserId: "other-user",
+      createdByPersonId: "other-person",
+      reporter: {
+        userId: "other-user",
+        personId: "other-person",
+        firstName: "Altro",
+        lastName: "Utente",
+        companyId: baseScope.companyId,
+        role: SegnalazioniRole.Segnalatore,
+      },
+    })]);
+
+    const result = await createIntegrateSegnalazioneUseCase(deps)({
+      actor: makeActor({ role: SegnalazioniRole.Segnalatore }),
+      id: "report-1",
+      text: "Tentativo non autorizzato.",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.code).toBe(ApplicationErrorCode.Forbidden);
+  });
+
+  it("resolves an integrated report with a mandatory note", async () => {
+    const deps = makeDeps([makeSegnalazione({ status: StatoSegnalazione.Integrata })]);
+
+    const result = await createResolveSegnalazioneUseCase(deps)({
+      actor: makeActor({ role: SegnalazioniRole.ResponsabileSicurezza }),
+      id: "report-1",
+      resolution: "Parapetto ripristinato.",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.status).toBe(StatoSegnalazione.Risolta);
+  });
+
   it("blocks close from incompatible status", async () => {
     const deps = makeDeps([makeSegnalazione({ status: StatoSegnalazione.Nuova })]);
     const result = await createCloseSegnalazioneUseCase(deps)({
@@ -361,6 +465,21 @@ describe("segnalazioni application use cases", () => {
 
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error.code).toBe(ApplicationErrorCode.InvalidTransition);
+  });
+
+  it("closes a resolved report and sets closedAt", async () => {
+    const deps = makeDeps([makeSegnalazione({ status: StatoSegnalazione.Risolta })]);
+    const result = await createCloseSegnalazioneUseCase(deps)({
+      actor: makeActor({ role: SegnalazioniRole.ResponsabileSicurezza }),
+      id: "report-1",
+      note: "Verifica finale completata.",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe(StatoSegnalazione.Chiusa);
+      expect(result.data.closedAt).toBe("2026-07-10T10:00:00.000Z");
+    }
   });
 
   it("records acknowledgement without changing report status", async () => {
@@ -375,5 +494,19 @@ describe("segnalazioni application use cases", () => {
     expect(result.success).toBe(true);
     expect(deps.repository.acknowledgements).toHaveLength(1);
     expect(deps.repository.reports.get("report-1")?.status).toBe(StatoSegnalazione.PresaInCarico);
+  });
+
+  it("returns existing acknowledgement without duplicate error", async () => {
+    const report = makeSegnalazione({ status: StatoSegnalazione.PresaInCarico });
+    const deps = makeDeps([report]);
+    const useCase = createAcknowledgeSegnalazioneUseCase(deps);
+    const actor = makeActor({ role: SegnalazioniRole.Segnalatore });
+
+    const first = await useCase({ actor, id: "report-1" });
+    const second = await useCase({ actor, id: "report-1" });
+
+    expect(first.success).toBe(true);
+    expect(second.success).toBe(true);
+    expect(deps.repository.acknowledgements).toHaveLength(1);
   });
 });

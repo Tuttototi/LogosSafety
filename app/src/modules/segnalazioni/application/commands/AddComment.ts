@@ -4,11 +4,18 @@ import { ApplicationEventType, type AddCommentInput } from "../types";
 import { ensureCanComment, loadVisibleSegnalazione, makeComment, makeEvent, recordEvent } from "../helpers";
 import type { Commento } from "../../domain";
 
+const MAX_COMMENT_LENGTH = 2000;
+
 export function createAddCommentUseCase(deps: SegnalazioniUseCaseDependencies) {
   return async function addComment(input: AddCommentInput): Promise<ApplicationResult<Commento>> {
     const text = input.text.trim();
     if (!text) {
       return fail(ApplicationErrorCode.ValidationError, "Comment text is required");
+    }
+    if (text.length > MAX_COMMENT_LENGTH) {
+      return fail(ApplicationErrorCode.ValidationError, "Comment text is too long", {
+        maxLength: MAX_COMMENT_LENGTH,
+      });
     }
 
     const loadResult = await loadVisibleSegnalazione(deps, input.actor, input.id);
@@ -37,4 +44,3 @@ export function createAddCommentUseCase(deps: SegnalazioniUseCaseDependencies) {
     return ok(comment);
   };
 }
-

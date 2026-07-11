@@ -2,6 +2,17 @@
 
 ## 12 luglio 2026
 
+### Segnalazioni — workflow operativo reale
+
+- Collegate alle API tRPC le mutation operative `addComment`, `requestIntegration`, `integrate`, `takeInCharge`, `changeStatus`, `resolve`, `close` e `acknowledge`.
+- Esteso il dettaglio `segnalazioni.byId` con commenti reali, timeline persistita, capability server-side e stato presa visione.
+- Aggiornata `SegnalatoreApp` per mostrare azioni solo secondo capability backend, commenti, timeline e presa visione.
+- Rafforzati use case Application per commenti/testi obbligatori, acknowledgement idempotente e conflict su presa in carico gia' avvenuta.
+- Aggiornata la policy Domain per ruoli operativi scoped (`capo_area`, `capo_impianto`, `referente_commessa`) senza privilegi cross-tenant.
+- Aggiunto integration test MySQL reale sul ciclo create -> presa in carico -> commento -> richiesta integrazione -> integrazione -> risoluzione -> presa visione -> chiusura.
+- Documentato il workflow in `docs/workflows/SEGNALAZIONI_WORKFLOW.md`.
+- AuditPort e NotificationPort restano deferred; nessun event bus, nessuna modifica a schema DB, migrazioni, auth, sidebar, allegati reali o Comunicazioni backend.
+
 ### Core / Segnalazioni — Organizational Scope Resolver
 
 - Aggiunto il contratto applicativo `organizational-scope` per caricare appalti/commesse, sedi, impianti e aree accessibili all'attore.

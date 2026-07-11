@@ -174,6 +174,64 @@ function createDependencyFactory(options: {
       );
       return options.byIdResult ?? (found ? ok(found) : fail(ApplicationErrorCode.NotFound, "Segnalazione not found"));
     },
+    addComment: async (input) => ok({
+      id: "comment-1",
+      segnalazioneId: input.id,
+      testo: input.text,
+      autoreId: input.actor.userId,
+      autoreNome: `${input.actor.firstName} ${input.actor.lastName}`,
+      pubblico: true,
+      createdAt: "2026-07-11T11:00:00.000Z",
+      updatedAt: "2026-07-11T11:00:00.000Z",
+    }),
+    requestIntegration: async (input) => ok(makeSegnalazione({
+      id: input.id,
+      status: StatoSegnalazione.RichiestaIntegrazione,
+      workflow: [{
+        id: "workflow-request",
+        segnalazioneId: input.id,
+        statoDa: StatoSegnalazione.InLavorazione,
+        statoA: StatoSegnalazione.RichiestaIntegrazione,
+        eseguitoDaId: input.actor.userId,
+        eseguitoDaNome: `${input.actor.firstName} ${input.actor.lastName}`,
+        note: input.reason,
+        createdAt: "2026-07-11T11:00:00.000Z",
+      }],
+    })),
+    integrateSegnalazione: async (input) => ok(makeSegnalazione({
+      id: input.id,
+      status: StatoSegnalazione.Integrata,
+    })),
+    takeInChargeSegnalazione: async (input) => ok(makeSegnalazione({
+      id: input.id,
+      status: StatoSegnalazione.PresaInCarico,
+      assignedToUserId: input.actor.userId,
+      responsibleUserId: input.actor.userId,
+    })),
+    changeSegnalazioneStatus: async (input) => ok(makeSegnalazione({
+      id: input.id,
+      status: input.status,
+    })),
+    resolveSegnalazione: async (input) => ok(makeSegnalazione({
+      id: input.id,
+      status: StatoSegnalazione.Risolta,
+    })),
+    closeSegnalazione: async (input) => ok(makeSegnalazione({
+      id: input.id,
+      status: StatoSegnalazione.Chiusa,
+      closedAt: "2026-07-11T12:00:00.000Z",
+    })),
+    acknowledgeSegnalazione: async (input) => ok({
+      id: "ack-1",
+      segnalazioneId: input.id,
+      tenantId: input.actor.tenantId,
+      companyId: input.actor.companyId,
+      userId: input.actor.userId,
+      personId: input.actor.personId,
+      acknowledgedAt: "2026-07-11T12:00:00.000Z",
+    }),
+    hasAcknowledgement: async () => false,
+    listAcknowledgements: async () => [],
   });
 }
 
@@ -681,6 +739,85 @@ describe("segnalazioni tRPC router", () => {
 
     expect(identityCalls).toHaveLength(1);
     expect(identityCalls[0]?.user?.id).toBe(1);
+  });
+
+  it("returns server-side capabilities and timeline in detail", async () => {
+    const router = createSegnalazioniRouter(createDependencyFactory(), createActorResolver());
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    const result = await caller.byId({ id: "api-report-1" });
+
+    expect(result.capabilities.canTakeInCharge).toBe(true);
+    expect(result.capabilities.allowedStatusTransitions).toEqual([StatoSegnalazione.PresaInCarico]);
+    expect(result.timeline[0]).toMatchObject({
+      type: "created",
+      newStatus: StatoSegnalazione.Nuova,
+    });
+    expect(result.acknowledgement.acknowledged).toBe(false);
+  });
+
+  it("adds a comment without accepting client author fields", async () => {
+    const router = createSegnalazioniRouter(createDependencyFactory(), createActorResolver());
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    const result = await caller.addComment({
+      id: "api-report-1",
+      text: "Verifica effettuata in cantiere.",
+    });
+
+    expect(result.comment).toMatchObject({
+      testo: "Verifica effettuata in cantiere.",
+      autoreId: "legacy-user-1",
+    });
+
+    await expect(caller.addComment({
+      id: "api-report-1",
+      text: "Commento",
+      authorUserId: "malicious",
+    } as never)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("executes workflow mutations through application use cases", async () => {
+    const router = createSegnalazioniRouter(createDependencyFactory(), createActorResolver());
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    await expect(caller.takeInCharge({ id: "api-report-1" })).resolves.toMatchObject({
+      status: StatoSegnalazione.PresaInCarico,
+      assignedToUserId: "legacy-user-1",
+    });
+    await expect(caller.requestIntegration({
+      id: "api-report-1",
+      message: "Serve integrazione fotografica.",
+    })).resolves.toMatchObject({
+      status: StatoSegnalazione.RichiestaIntegrazione,
+    });
+    await expect(caller.integrate({
+      id: "api-report-1",
+      message: "Integrazione inviata.",
+    })).resolves.toMatchObject({
+      status: StatoSegnalazione.Integrata,
+    });
+    await expect(caller.changeStatus({
+      id: "api-report-1",
+      targetStatus: StatoSegnalazione.InLavorazione,
+    })).resolves.toMatchObject({
+      status: StatoSegnalazione.InLavorazione,
+    });
+    await expect(caller.resolve({
+      id: "api-report-1",
+      resolutionNote: "Risoluzione completata.",
+    })).resolves.toMatchObject({
+      status: StatoSegnalazione.Risolta,
+    });
+    await expect(caller.close({
+      id: "api-report-1",
+      closingNote: "Chiusura confermata.",
+    })).resolves.toMatchObject({
+      status: StatoSegnalazione.Chiusa,
+    });
+    await expect(caller.acknowledge({ id: "api-report-1" })).resolves.toMatchObject({
+      acknowledged: true,
+    });
   });
 
   it("maps unsupported legacy read roles to non-management domain roles", async () => {

@@ -10,6 +10,7 @@ import {
   OPERATIONAL_SCOPE_EMPTY_MESSAGE,
   OPERATIONAL_SCOPE_ERROR_MESSAGE,
   OPERATIONAL_SCOPE_LOADING_MESSAGE,
+  WORKFLOW_ACTION_ERROR_MESSAGE,
   buildCreateSegnalazionePayload,
   formatOperationalScope,
   getOperationalScopeLoadState,
@@ -93,12 +94,45 @@ describe("SegnalatoreApp UI mapping", () => {
     const detail: SegnalazioneDetailDto = {
       ...listItem,
       description: "Il parapetto del ponteggio oscilla.",
-      comments: [],
+      comments: [{
+        id: "comment-1",
+        segnalazioneId: "report-1",
+        testo: "Commento reale",
+        autoreNome: "Mario Rossi",
+        pubblico: true,
+        createdAt: "2026-07-11T12:00:00.000Z",
+      }],
       attachments: [],
       workflow: [],
+      timeline: [{
+        id: "created-report-1",
+        type: "created",
+        occurredAt: "2026-07-11T10:00:00.000Z",
+        actorDisplayName: "Mario Rossi",
+        actorRole: "segnalatore",
+        newStatus: "Nuova",
+        text: "Segnalazione creata",
+      }],
+      capabilities: {
+        canComment: true,
+        canTakeInCharge: true,
+        canRequestIntegration: false,
+        canIntegrate: false,
+        canResolve: false,
+        canClose: false,
+        canAcknowledge: true,
+        allowedStatusTransitions: ["Presa in carico"],
+      },
+      acknowledgement: { acknowledged: false },
     };
 
-    expect(mapDetailToReport(detail).description).toBe("Il parapetto del ponteggio oscilla.");
+    const report = mapDetailToReport(detail);
+
+    expect(report.description).toBe("Il parapetto del ponteggio oscilla.");
+    expect(report.comments?.[0]?.testo).toBe("Commento reale");
+    expect(report.timeline?.[0]?.type).toBe("created");
+    expect(report.capabilities?.canTakeInCharge).toBe(true);
+    expect(report.acknowledgement?.acknowledged).toBe(false);
   });
 
   it("uses backend actor scope when no operational scope is returned", () => {
@@ -237,5 +271,6 @@ describe("SegnalatoreApp UI mapping", () => {
     expect(OPERATIONAL_SCOPE_LOADING_MESSAGE).toBe("Caricamento contesti operativi...");
     expect(OPERATIONAL_SCOPE_EMPTY_MESSAGE).toBe("Nessun appalto o impianto disponibile per il tuo profilo");
     expect(OPERATIONAL_SCOPE_ERROR_MESSAGE).toBe("Impossibile caricare i contesti operativi. Riprova.");
+    expect(WORKFLOW_ACTION_ERROR_MESSAGE).toBe("Operazione non completata. Riprova.");
   });
 });

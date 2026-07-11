@@ -11,6 +11,7 @@ import {
   OPERATIONAL_SCOPE_EMPTY_MESSAGE,
   OPERATIONAL_SCOPE_ERROR_MESSAGE,
   OPERATIONAL_SCOPE_REQUIRED_MESSAGE,
+  WORKFLOW_ACTION_ERROR_MESSAGE,
   getFriendlySegnalazioniError,
   getOperationalScopeLoadState,
   getSingleOperationalScopeSelection,
@@ -18,10 +19,11 @@ import {
   useAvailableOperationalScope,
   useCreateSegnalazione,
   useSegnalazioneDetail,
+  useSegnalazioneWorkflowActions,
   useSegnalazioni,
 } from "@/modules/segnalazioni/ui";
 import { defaultDraft, mockCommunications, roleGroups, roleLabels } from "./mock";
-import type { AppTab, DraftReport, SafetyCommunication, SegnalatoreReport, SegnalatoreRoleGroup } from "./types";
+import type { AppTab, DraftReport, ReportStatus, SafetyCommunication, SegnalatoreReport, SegnalatoreRoleGroup } from "./types";
 
 function normalizeRole(role?: string | null) {
   return role?.trim() || "segnalatore";
@@ -58,10 +60,17 @@ export function useSegnalatoreApp(role?: string) {
   const [selectedReportId, setSelectedReportId] = useState("");
   const [message, setMessage] = useState("");
   const [createErrorMessage, setCreateErrorMessage] = useState("");
+  const [workflowErrorMessage, setWorkflowErrorMessage] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [integrationRequestText, setIntegrationRequestText] = useState("");
+  const [integrationText, setIntegrationText] = useState("");
+  const [resolutionNote, setResolutionNote] = useState("");
+  const [closingNote, setClosingNote] = useState("");
 
   const operationalScopeQuery = useAvailableOperationalScope();
   const reportsQuery = useSegnalazioni();
   const detailQuery = useSegnalazioneDetail(selectedReportId || undefined);
+  const workflowActions = useSegnalazioneWorkflowActions();
   const createReport = useCreateSegnalazione({
     onSuccess: (createdId) => {
       setSelectedReportId(createdId);
@@ -154,17 +163,100 @@ export function useSegnalatoreApp(role?: string) {
   };
 
   const handleAction = (action: string, report: SegnalatoreReport) => {
+    void action;
     setSelectedReportId(report.id);
-    if (action === "Visualizza") {
-      setMessage("");
-      return;
-    }
-    setMessage(`${action} su ${report.code}: azione non ancora collegata al workflow backend.`);
+    setMessage("");
+    setWorkflowErrorMessage("");
   };
 
   const handleBackToList = () => {
     setSelectedReportId("");
     setMessage("");
+    setWorkflowErrorMessage("");
+  };
+
+  const completeWorkflowAction = (successMessage: string, reset?: () => void) => {
+    setWorkflowErrorMessage("");
+    setMessage(successMessage);
+    reset?.();
+  };
+
+  const requireText = (value: string, errorMessage: string): string | undefined => {
+    const text = value.trim();
+    if (!text) {
+      setWorkflowErrorMessage(errorMessage);
+      return undefined;
+    }
+    return text;
+  };
+
+  const handleCommentSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedReportId || workflowActions.isPending) return;
+    const text = requireText(commentText, "Inserisci un commento.");
+    if (!text) return;
+    workflowActions.addComment({ id: selectedReportId, text }, () =>
+      completeWorkflowAction("Commento aggiunto", () => setCommentText("")),
+    );
+  };
+
+  const handleTakeInCharge = () => {
+    if (!selectedReportId || workflowActions.isPending) return;
+    workflowActions.takeInCharge({ id: selectedReportId }, () =>
+      completeWorkflowAction("Segnalazione presa in carico"),
+    );
+  };
+
+  const handleRequestIntegration = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedReportId || workflowActions.isPending) return;
+    const messageText = requireText(integrationRequestText, "Inserisci il messaggio di richiesta integrazione.");
+    if (!messageText) return;
+    workflowActions.requestIntegration({ id: selectedReportId, message: messageText }, () =>
+      completeWorkflowAction("Richiesta integrazione inviata", () => setIntegrationRequestText("")),
+    );
+  };
+
+  const handleIntegrate = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedReportId || workflowActions.isPending) return;
+    const messageText = requireText(integrationText, "Inserisci il testo dell'integrazione.");
+    if (!messageText) return;
+    workflowActions.integrate({ id: selectedReportId, message: messageText }, () =>
+      completeWorkflowAction("Integrazione inviata", () => setIntegrationText("")),
+    );
+  };
+
+  const handleChangeStatus = (targetStatus: ReportStatus) => {
+    if (!selectedReportId || workflowActions.isPending) return;
+    workflowActions.changeStatus({ id: selectedReportId, targetStatus }, () =>
+      completeWorkflowAction(`Stato aggiornato a ${targetStatus}`),
+    );
+  };
+
+  const handleResolve = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedReportId || workflowActions.isPending) return;
+    const note = requireText(resolutionNote, "Inserisci una nota di risoluzione.");
+    if (!note) return;
+    workflowActions.resolve({ id: selectedReportId, resolutionNote: note }, () =>
+      completeWorkflowAction("Segnalazione risolta", () => setResolutionNote("")),
+    );
+  };
+
+  const handleClose = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedReportId || workflowActions.isPending) return;
+    workflowActions.close({ id: selectedReportId, closingNote: closingNote.trim() || undefined }, () =>
+      completeWorkflowAction("Segnalazione chiusa", () => setClosingNote("")),
+    );
+  };
+
+  const handleAcknowledge = () => {
+    if (!selectedReportId || workflowActions.isPending) return;
+    workflowActions.acknowledge({ id: selectedReportId }, () =>
+      completeWorkflowAction("Presa visione registrata"),
+    );
   };
 
   const handleCommunicationOpen = (communication: SafetyCommunication) => {
@@ -194,8 +286,12 @@ export function useSegnalatoreApp(role?: string) {
     attachments,
     communications,
     createErrorMessage: createErrorMessage || (createReport.error ? getFriendlySegnalazioniError(CREATE_ERROR_MESSAGE) : ""),
+    commentText,
+    closingNote,
     draft: draftWithOperationalDefaults,
     emptyListMessage: EMPTY_LIST_MESSAGE,
+    integrationRequestText,
+    integrationText,
     isCreateDisabled,
     isCreatePending: createReport.isPending,
     isDetailLoading: detailQuery.isLoading || detailQuery.isFetching,
@@ -209,17 +305,33 @@ export function useSegnalatoreApp(role?: string) {
     detailErrorMessage,
     listErrorMessage,
     selectedReport,
+    resolutionNote,
     visibleReports,
+    workflowErrorMessage: workflowErrorMessage || (workflowActions.error ? getFriendlySegnalazioniError(WORKFLOW_ACTION_ERROR_MESSAGE) : ""),
+    isWorkflowActionPending: workflowActions.isPending,
     handleAction,
+    handleAcknowledge,
     handleBackToList,
+    handleChangeStatus,
     handleCommunicationAcknowledgement,
     handleCommunicationOpen,
+    handleClose,
+    handleCommentSubmit,
     handleDraftChange,
     handleFileChange,
+    handleIntegrate,
+    handleRequestIntegration,
+    handleResolve,
     handleSubmit,
+    handleTakeInCharge,
     refetchReports: reportsQuery.refetch,
     refetchOperationalScope: operationalScopeQuery.refetch,
     refetchSelectedReport: detailQuery.refetch,
+    setClosingNote,
+    setCommentText,
+    setIntegrationRequestText,
+    setIntegrationText,
+    setResolutionNote,
     setActiveTab,
   };
 }

@@ -1,4 +1,4 @@
-import { ApplicationErrorCode, fail, ok, type ApplicationResult } from "../errors/ApplicationError";
+import { ok, type ApplicationResult } from "../errors/ApplicationError";
 import type { SegnalazioniUseCaseDependencies } from "../dependencies";
 import { ApplicationEventType, type AcknowledgeSegnalazioneInput, type AcknowledgementRecord } from "../types";
 import { loadVisibleSegnalazione, makeEvent, recordEvent } from "../helpers";
@@ -10,11 +10,13 @@ export function createAcknowledgeSegnalazioneUseCase(deps: SegnalazioniUseCaseDe
     const loadResult = await loadVisibleSegnalazione(deps, input.actor, input.id);
     if (!loadResult.success) return loadResult;
 
-    if (await deps.repository.hasAcknowledgement(input.id, input.actor.userId, loadResult.data.tenantId)) {
-      return fail(ApplicationErrorCode.Conflict, "Segnalazione acknowledgement already exists", {
-        id: input.id,
-        userId: input.actor.userId,
-      });
+    const existingAcknowledgement = await deps.repository.findAcknowledgement(
+      input.id,
+      input.actor.userId,
+      loadResult.data.tenantId,
+    );
+    if (existingAcknowledgement) {
+      return ok(existingAcknowledgement);
     }
 
     const acknowledgedAt = deps.clock.now();
@@ -41,4 +43,3 @@ export function createAcknowledgeSegnalazioneUseCase(deps: SegnalazioniUseCaseDe
     return ok(acknowledgement);
   };
 }
-

@@ -35,6 +35,13 @@ export type SegnalatoreReport = {
   update: string;
   description: string;
   reporterDisplayName?: string;
+  comments?: SegnalazioneCommentDto[];
+  timeline?: SegnalazioneTimelineItemDto[];
+  capabilities?: SegnalazioneCapabilitiesDto;
+  acknowledgement?: {
+    acknowledged: boolean;
+    acknowledgedAt?: string;
+  };
 };
 
 export type DraftReport = {
@@ -85,11 +92,61 @@ export type SegnalazioniListItemDto = {
   updatedAt: string;
 };
 
+export type TimelineEventType =
+  | "created"
+  | "taken_in_charge"
+  | "comment_added"
+  | "integration_requested"
+  | "integrated"
+  | "status_changed"
+  | "resolved"
+  | "closed"
+  | "acknowledged";
+
+export type SegnalazioneCommentDto = {
+  id: string;
+  segnalazioneId: string;
+  testo: string;
+  autoreId?: string;
+  autoreNome?: string;
+  pubblico: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type SegnalazioneTimelineItemDto = {
+  id: string;
+  type: TimelineEventType;
+  occurredAt: string;
+  actorDisplayName?: string;
+  actorRole?: string;
+  previousStatus?: ReportStatus;
+  newStatus?: ReportStatus;
+  text?: string;
+};
+
+export type SegnalazioneCapabilitiesDto = {
+  canComment: boolean;
+  canTakeInCharge: boolean;
+  canRequestIntegration: boolean;
+  canIntegrate: boolean;
+  canResolve: boolean;
+  canClose: boolean;
+  canAcknowledge: boolean;
+  allowedStatusTransitions: ReportStatus[];
+};
+
 export type SegnalazioneDetailDto = SegnalazioniListItemDto & {
   description: string;
-  comments?: unknown[];
+  comments?: SegnalazioneCommentDto[];
   attachments?: unknown[];
   workflow?: unknown[];
+  timeline?: SegnalazioneTimelineItemDto[];
+  capabilities?: SegnalazioneCapabilitiesDto;
+  acknowledgement?: {
+    acknowledged: boolean;
+    acknowledgedAt?: string;
+  };
   closedAt?: string;
 };
 

@@ -8,6 +8,7 @@ import {
 } from "@/modules/segnalazioni/domain";
 
 const nonEmptyString = z.string().trim().min(1).max(64);
+const workflowTextSchema = z.string().trim().min(1).max(2000);
 const prioritySchema = z.enum([
   PrioritaSegnalazione.Bassa,
   PrioritaSegnalazione.Media,
@@ -73,6 +74,44 @@ export const listSegnalazioniInputSchema = z.object({
 }).strict().optional();
 
 export const byIdSegnalazioneInputSchema = z.object({
+  id: nonEmptyString,
+}).strict();
+
+export const addCommentInputSchema = z.object({
+  id: nonEmptyString,
+  text: workflowTextSchema,
+}).strict();
+
+export const requestIntegrationInputSchema = z.object({
+  id: nonEmptyString,
+  message: workflowTextSchema,
+}).strict();
+
+export const integrateInputSchema = z.object({
+  id: nonEmptyString,
+  message: workflowTextSchema,
+}).strict();
+
+export const takeInChargeInputSchema = z.object({
+  id: nonEmptyString,
+}).strict();
+
+export const changeStatusInputSchema = z.object({
+  id: nonEmptyString,
+  targetStatus: statusSchema,
+}).strict();
+
+export const resolveInputSchema = z.object({
+  id: nonEmptyString,
+  resolutionNote: workflowTextSchema,
+}).strict();
+
+export const closeInputSchema = z.object({
+  id: nonEmptyString,
+  closingNote: z.string().trim().max(2000).optional(),
+}).strict();
+
+export const acknowledgeInputSchema = z.object({
   id: nonEmptyString,
 }).strict();
 

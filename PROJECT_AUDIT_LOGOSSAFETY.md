@@ -8,6 +8,18 @@
 
 ## Aggiornamento operativo — 12 luglio 2026
 
+Implementato il workflow operativo reale Segnalazioni:
+
+- collegate alle API tRPC le procedure operative per commenti, presa in carico, richiesta integrazione, integrazione, cambio stato, risoluzione, chiusura e presa visione;
+- esteso il dettaglio con capability server-side, commenti reali, timeline persistita e stato acknowledgement;
+- aggiornata `SegnalatoreApp` per usare capability backend e non piu' azioni mock sul workflow;
+- mantenuta la logica di transizione nel Domain/Application Layer;
+- resa idempotente la presa visione dal punto di vista UX;
+- aggiunto integration test MySQL reale su ciclo operativo completo con verifica record commenti, workflow events e acknowledgement;
+- documentato il workflow in `docs/workflows/SEGNALAZIONI_WORKFLOW.md`.
+
+Limiti residui: AuditPort e NotificationPort sono ancora deferred, non esiste outbox/event bus, gli allegati reali restano fuori scope e lo schema storico workflow non conserva sempre il ruolo dell'attore.
+
 Implementato l'Organizational Scope Resolver per Segnalazioni:
 
 - aggiunto contratto applicativo `app/src/modules/core/application/organizational-scope` con use case, port, policy e tipi DTO minimali;

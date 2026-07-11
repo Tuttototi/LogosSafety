@@ -1,12 +1,23 @@
 import {
+  createAcknowledgeSegnalazioneUseCase,
+  createAddCommentUseCase,
+  createChangeSegnalazioneStatusUseCase,
+  createCloseSegnalazioneUseCase,
   createCreateSegnalazioneUseCase,
   createGetSegnalazioneByIdUseCase,
+  createIntegrateSegnalazioneUseCase,
   createListVisibleSegnalazioniUseCase,
+  createRequestIntegrationUseCase,
+  createResolveSegnalazioneUseCase,
+  createTakeInChargeSegnalazioneUseCase,
+  type AcknowledgementRecord,
   type ApplicationEvent,
   type AuditPort,
   type ClockPort,
   type IdGeneratorPort,
   type NotificationPort,
+  type AcknowledgeSegnalazioneInput,
+  type SegnalazioneActionInput,
   type SegnalazioniUseCaseDependencies,
 } from "@/modules/segnalazioni/application";
 import {
@@ -51,14 +62,25 @@ export interface SegnalazioniApiDependencies {
   createSegnalazione: ReturnType<typeof createCreateSegnalazioneUseCase>;
   listVisibleSegnalazioni: ReturnType<typeof createListVisibleSegnalazioniUseCase>;
   getSegnalazioneById: ReturnType<typeof createGetSegnalazioneByIdUseCase>;
+  addComment: ReturnType<typeof createAddCommentUseCase>;
+  requestIntegration: ReturnType<typeof createRequestIntegrationUseCase>;
+  integrateSegnalazione: ReturnType<typeof createIntegrateSegnalazioneUseCase>;
+  takeInChargeSegnalazione: ReturnType<typeof createTakeInChargeSegnalazioneUseCase>;
+  changeSegnalazioneStatus: ReturnType<typeof createChangeSegnalazioneStatusUseCase>;
+  resolveSegnalazione: ReturnType<typeof createResolveSegnalazioneUseCase>;
+  closeSegnalazione: ReturnType<typeof createCloseSegnalazioneUseCase>;
+  acknowledgeSegnalazione: ReturnType<typeof createAcknowledgeSegnalazioneUseCase>;
+  hasAcknowledgement: (input: AcknowledgeSegnalazioneInput) => Promise<boolean>;
+  listAcknowledgements: (input: SegnalazioneActionInput) => Promise<AcknowledgementRecord[]>;
 }
 
 export type SegnalazioniDependencyFactory = (ctx: TrpcContext) => SegnalazioniApiDependencies;
 
 export function createSegnalazioniDependencies(): SegnalazioniApiDependencies {
   const db = getDb() as unknown as SegnalazioniDrizzleDatabase;
+  const repository = new DrizzleSegnalazioniRepository(db);
   const deps: SegnalazioniUseCaseDependencies = {
-    repository: new DrizzleSegnalazioniRepository(db),
+    repository,
     audit: new DeferredAuditPort(),
     notification: new DeferredNotificationPort(),
     clock: new SystemClock(),
@@ -69,5 +91,17 @@ export function createSegnalazioniDependencies(): SegnalazioniApiDependencies {
     createSegnalazione: createCreateSegnalazioneUseCase(deps),
     listVisibleSegnalazioni: createListVisibleSegnalazioniUseCase(deps),
     getSegnalazioneById: createGetSegnalazioneByIdUseCase(deps),
+    addComment: createAddCommentUseCase(deps),
+    requestIntegration: createRequestIntegrationUseCase(deps),
+    integrateSegnalazione: createIntegrateSegnalazioneUseCase(deps),
+    takeInChargeSegnalazione: createTakeInChargeSegnalazioneUseCase(deps),
+    changeSegnalazioneStatus: createChangeSegnalazioneStatusUseCase(deps),
+    resolveSegnalazione: createResolveSegnalazioneUseCase(deps),
+    closeSegnalazione: createCloseSegnalazioneUseCase(deps),
+    acknowledgeSegnalazione: createAcknowledgeSegnalazioneUseCase(deps),
+    hasAcknowledgement: async (input: AcknowledgeSegnalazioneInput) =>
+      repository.hasAcknowledgement(input.id, input.actor.userId, input.actor.tenantId),
+    listAcknowledgements: async (input: SegnalazioneActionInput) =>
+      repository.listAcknowledgements(input.id, input.actor.tenantId),
   };
 }

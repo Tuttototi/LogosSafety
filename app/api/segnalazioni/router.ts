@@ -1,7 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { createRouter, authedQuery } from "../middleware";
 import { buildSegnalazioniActor } from "./actor";
-import { createSegnalazioniDependencies, type SegnalazioniDependencyFactory } from "./dependencies";
+import {
+  createSegnalazioniDependencies,
+  type SegnalazioniApiDependencies,
+  type SegnalazioniDependencyFactory,
+} from "./dependencies";
 import { DrizzleOrganizationalScopeRepository } from "../core/organizational-scope";
 import {
   toSegnalazioneDetailDto,
@@ -10,9 +14,17 @@ import {
 } from "./dto";
 import { mapUnexpectedSegnalazioniError, unwrapResult } from "./error-mapper";
 import {
+  acknowledgeInputSchema,
+  addCommentInputSchema,
   byIdSegnalazioneInputSchema,
+  changeStatusInputSchema,
+  closeInputSchema,
   createSegnalazioneInputSchema,
+  integrateInputSchema,
   listSegnalazioniInputSchema,
+  requestIntegrationInputSchema,
+  resolveInputSchema,
+  takeInChargeInputSchema,
   type ListSegnalazioniApiInput,
 } from "./schemas";
 import type { Segnalazione } from "@/modules/segnalazioni/domain";
@@ -73,6 +85,23 @@ function unwrapOperationalScopeResult(
   });
 }
 
+async function toDetailResponse(
+  deps: SegnalazioniApiDependencies,
+  actor: ApplicationActor,
+  segnalazione: Segnalazione,
+) {
+  const [acknowledgedByCurrentUser, acknowledgements] = await Promise.all([
+    deps.hasAcknowledgement({ actor, id: segnalazione.id }),
+    deps.listAcknowledgements({ actor, id: segnalazione.id }),
+  ]);
+
+  return toSegnalazioneDetailDto(segnalazione, {
+    actor,
+    acknowledgedByCurrentUser,
+    acknowledgements,
+  });
+}
+
 export function createSegnalazioniRouter(
   dependencyFactory: SegnalazioniDependencyFactory = createSegnalazioniDependencies,
   actorResolver: SegnalazioniActorResolver = defaultActorResolver,
@@ -110,7 +139,7 @@ export function createSegnalazioniRouter(
             organizationalScope,
           }));
 
-          return toSegnalazioneDetailDto(segnalazione);
+          return toDetailResponse(deps, actor, segnalazione);
         } catch (error) {
           mapUnexpectedSegnalazioniError(error);
         }
@@ -179,7 +208,152 @@ export function createSegnalazioniRouter(
             id: input.id,
           }));
 
-          return toSegnalazioneDetailDto(segnalazione);
+          return toDetailResponse(deps, actor, segnalazione);
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    addComment: authedQuery
+      .input(addCommentInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const comment = unwrapResult(await deps.addComment({
+            actor,
+            id: input.id,
+            text: input.text,
+          }));
+
+          return { comment };
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    requestIntegration: authedQuery
+      .input(requestIntegrationInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const segnalazione = unwrapResult(await deps.requestIntegration({
+            actor,
+            id: input.id,
+            reason: input.message,
+          }));
+
+          return toDetailResponse(deps, actor, segnalazione);
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    integrate: authedQuery
+      .input(integrateInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const segnalazione = unwrapResult(await deps.integrateSegnalazione({
+            actor,
+            id: input.id,
+            text: input.message,
+          }));
+
+          return toDetailResponse(deps, actor, segnalazione);
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    takeInCharge: authedQuery
+      .input(takeInChargeInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const segnalazione = unwrapResult(await deps.takeInChargeSegnalazione({
+            actor,
+            id: input.id,
+          }));
+
+          return toDetailResponse(deps, actor, segnalazione);
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    changeStatus: authedQuery
+      .input(changeStatusInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const segnalazione = unwrapResult(await deps.changeSegnalazioneStatus({
+            actor,
+            id: input.id,
+            status: input.targetStatus,
+          }));
+
+          return toDetailResponse(deps, actor, segnalazione);
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    resolve: authedQuery
+      .input(resolveInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const segnalazione = unwrapResult(await deps.resolveSegnalazione({
+            actor,
+            id: input.id,
+            resolution: input.resolutionNote,
+          }));
+
+          return toDetailResponse(deps, actor, segnalazione);
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    close: authedQuery
+      .input(closeInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const segnalazione = unwrapResult(await deps.closeSegnalazione({
+            actor,
+            id: input.id,
+            note: input.closingNote,
+          }));
+
+          return toDetailResponse(deps, actor, segnalazione);
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    acknowledge: authedQuery
+      .input(acknowledgeInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const acknowledgement = unwrapResult(await deps.acknowledgeSegnalazione({
+            actor,
+            id: input.id,
+          }));
+
+          return {
+            acknowledged: true,
+            acknowledgedAt: acknowledgement.acknowledgedAt,
+          };
         } catch (error) {
           mapUnexpectedSegnalazioniError(error);
         }
