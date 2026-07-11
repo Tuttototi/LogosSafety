@@ -1,5 +1,14 @@
 # Changelog LogosSafety
 
+## 11 luglio 2026
+
+### Architettura — application context
+
+- Aggiunto `docs/architecture/APPLICATION_CONTEXT.md` con mappa moduli, ownership dati, dipendenze consentite/vietate, eventi, regole di integrazione e strategia di migrazione incrementale.
+- Aggiunta l'ADR `docs/architecture/decisions/ADR-0001-application-context.md` per formalizzare Core Domain condiviso, moduli indipendenti, backend unico LogosSafety e integrazione tramite port/eventi/contratti.
+- Aggiunti contratti TypeScript tecnici condivisi in `app/src/modules/shared/contracts` per `ActorContext`, `DomainEvent` ed `EntityReference`.
+- Nessuna modifica a database, migrazioni, API, auth, React, routing, UI o schema Drizzle.
+
 ## 10 luglio 2026
 
 ### Core Domain — modello condiviso

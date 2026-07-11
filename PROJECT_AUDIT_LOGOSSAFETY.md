@@ -6,6 +6,17 @@
 **Commit analizzato:** `be966fa` (`master`)  
 **Metodo:** analisi statica completa del repository, cronologia Git, schema e migration, type-check non scrivente, lint non scrivente, audit dipendenze npm e tentativo di connessione read-only al database configurato.
 
+## Aggiornamento operativo — 11 luglio 2026
+
+Definito l'Application Context architetturale di LogosSafety:
+
+- aggiunto `docs/architecture/APPLICATION_CONTEXT.md` con confini dei moduli, ownership dati, dipendenze consentite/vietate, eventi, regole di integrazione e strategia di migrazione da `app/src/components/reports` verso `app/src/modules`;
+- aggiunta la decisione `docs/architecture/decisions/ADR-0001-application-context.md`;
+- aggiunti contratti tecnici condivisi in `app/src/modules/shared/contracts` per `ActorContext`, `DomainEvent` ed `EntityReference`;
+- formalizzato che Core e' dipendenza condivisa, i moduli funzionali sono indipendenti e l'integrazione deve passare da port, eventi, contratti o API interne esplicite;
+- confermato che Audit Log e Notifiche sono consumer di eventi e che Comunicazioni Sicurezza resta separato da Segnalazioni;
+- nessuna modifica a database, migrazioni, API, Hono, tRPC, auth, React, routing, UI, schema Drizzle o modulo Segnalazioni operativo.
+
 ## Aggiornamento operativo — 10 luglio 2026
 
 Definito il Core Domain condiviso di LogosSafety:

@@ -1,11 +1,12 @@
 # Product Backlog LogosSafety
 
-**Ultimo aggiornamento:** 10 luglio 2026
+**Ultimo aggiornamento:** 11 luglio 2026
 
 ## Completato
 
 | Area | Task | Stato |
 |---|---|---|
+| Architettura | Definire Application Context, ownership dati, eventi e confini moduli | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
 | Segnalazioni | Implementare schema Drizzle e repository persistente non collegato alla UI | Completato |
 | Segnalazioni | Definire application layer con use case e ports astratti | Completato |
@@ -45,6 +46,8 @@
 | Segnalazioni | Eseguire test di migrazione e repository su database MySQL/MariaDB locale | Valida vincoli, FK e transazioni reali prima del wiring API | Aperto |
 | Core Domain | Definire adapter legacy da users/workers/companies al Core Domain | Necessario per migrare senza rompere auth e moduli esistenti | Aperto |
 | Sicurezza | Definire matrice RBAC ruolo-permesso basata su Core Domain | Necessario per sostituire gerarchie ruolo hardcoded | Aperto |
+| Architettura | Introdurre outbox/event bus interno per eventi cross-module | Necessario per Audit Log, Notifiche, Scadenze e read model | Aperto |
+| Architettura | Migrare router legacy verso application layer e port per modulo | Riduce accesso diretto alle tabelle e dipendenze implicite | Aperto |
 | Import/Export | Implementare import/export Mansioni, Corsi, Commesse e cataloghi | Chiude gap wizard attuale | Aperto |
 
 ## P2 — Evoluzione
