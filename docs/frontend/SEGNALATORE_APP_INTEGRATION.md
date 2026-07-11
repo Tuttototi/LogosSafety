@@ -6,7 +6,8 @@
 
 - lista segnalazioni visibili;
 - creazione nuova segnalazione;
-- dettaglio segnalazione.
+- dettaglio segnalazione;
+- contesti operativi selezionabili tramite `segnalazioni.availableScope`.
 
 La stessa app e' montata in:
 
@@ -21,7 +22,7 @@ La pagina `/segnalazioni` usa lo stesso layer dati frontend e non mantiene piu' 
 SegnalatoreApp React
   -> hooks UI Segnalazioni
   -> tRPC client esistente
-  -> segnalazioni.create/list/byId
+  -> segnalazioni.availableScope/create/list/byId
   -> Application use cases
   -> DrizzleSegnalazioniRepository
   -> MySQL locale/ambiente configurato
@@ -47,6 +48,7 @@ Il layer `app/src/modules/segnalazioni/ui` contiene:
 - `useSegnalazioni()`: carica `segnalazioni.list`;
 - `useSegnalazioneDetail(id)`: carica `segnalazioni.byId`;
 - `useCreateSegnalazione()`: invia `segnalazioni.create` e invalida la lista;
+- `useAvailableOperationalScope()`: carica appalti, sedi e impianti visibili all'attore;
 - mapper DTO -> UI;
 - builder payload create.
 
@@ -54,13 +56,19 @@ Il layer `app/src/modules/segnalazioni/ui` contiene:
 
 Il form mobile mantiene campi operatore:
 
+- Appalto / Commessa;
+- Sede, se presente;
+- Impianto, se presente;
+- Area, se presente;
 - Titolo;
 - Descrizione;
 - Priorita'.
 
-Il campo Appalto/Commessa/Impianto non usa piu' opzioni mock. Il perimetro operativo viene assegnato dal backend in base all'ActorContext.
+Il campo Appalto/Commessa/Impianto non usa opzioni mock. Le opzioni arrivano da `segnalazioni.availableScope`.
 
-Finche' manca una query sicura per gli appalti visibili all'attore, il client non invia `organizationalScope`. La API crea la segnalazione nel perimetro backend consentito e la `list` senza filtro esplicito non viene ristretta al primo scope operativo dell'attore, cosi' il record appena creato resta visibile.
+Il client invia `organizationalScope` solo quando l'utente seleziona id presenti nella risposta API. Il backend valida comunque ogni id prima della create.
+
+Se esiste una sola opzione operativa valida, la UI la preseleziona automaticamente. Se esistono piu' opzioni, la selezione resta esplicita.
 
 Default applicativi usati:
 
@@ -99,6 +107,9 @@ Nessun file viene inviato, salvato o caricato.
 
 La UI gestisce:
 
+- caricamento contesti operativi;
+- empty state contesti operativi;
+- errore contesti operativi con retry;
 - loading lista con skeleton;
 - lista vuota con messaggio neutro;
 - errore lista con azione Riprova;
@@ -110,9 +121,10 @@ La UI gestisce:
 
 ## Limiti residui
 
-- manca una query sicura per appalti/commesse visibili all'attore;
+- plant usa temporaneamente i dati reali di `microclimate_sites`;
+- aree operative non ancora disponibili nello schema attuale;
 - commenti, workflow, prese in carico e chiusure non sono ancora collegati;
 - allegati reali non disponibili;
 - Comunicazioni Sicurezza non hanno ancora backend;
-- il runtime locale richiede che il Core Identity Context risolva un worker/persona collegato all'utente autenticato.
+- il runtime locale richiede che il Core Identity Context risolva un worker/persona collegato all'utente autenticato;
 - `DEV_AUTH` richiede una URL MySQL locale valida e una fixture identity locale coerente con `users`, `workers`, `companies`, `sites`, `contracts` e `user_organization_scopes`.

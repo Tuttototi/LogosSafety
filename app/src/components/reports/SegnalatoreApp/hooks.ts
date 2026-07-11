@@ -8,7 +8,14 @@ import {
   DETAIL_ERROR_MESSAGE,
   EMPTY_LIST_MESSAGE,
   LIST_ERROR_MESSAGE,
+  OPERATIONAL_SCOPE_EMPTY_MESSAGE,
+  OPERATIONAL_SCOPE_ERROR_MESSAGE,
+  OPERATIONAL_SCOPE_REQUIRED_MESSAGE,
   getFriendlySegnalazioniError,
+  getOperationalScopeLoadState,
+  getSingleOperationalScopeSelection,
+  hasAvailableOperationalScope,
+  useAvailableOperationalScope,
   useCreateSegnalazione,
   useSegnalazioneDetail,
   useSegnalazioni,
@@ -22,6 +29,20 @@ function normalizeRole(role?: string | null) {
 
 function getRoleGroup(role: string): SegnalatoreRoleGroup {
   return roleGroups[role] ?? "operational";
+}
+
+function applySingleOperationalScopeSelection(
+  draft: DraftReport,
+  scope: ReturnType<typeof useAvailableOperationalScope>["scope"],
+): DraftReport {
+  const singleSelection = getSingleOperationalScopeSelection(scope);
+  return {
+    ...draft,
+    contractId: draft.contractId || singleSelection.contractId || "",
+    siteId: draft.siteId || singleSelection.siteId || "",
+    plantId: draft.plantId || singleSelection.plantId || "",
+    areaId: draft.areaId || singleSelection.areaId || "",
+  };
 }
 
 export function useSegnalatoreApp(role?: string) {
@@ -38,6 +59,7 @@ export function useSegnalatoreApp(role?: string) {
   const [message, setMessage] = useState("");
   const [createErrorMessage, setCreateErrorMessage] = useState("");
 
+  const operationalScopeQuery = useAvailableOperationalScope();
   const reportsQuery = useSegnalazioni();
   const detailQuery = useSegnalazioneDetail(selectedReportId || undefined);
   const createReport = useCreateSegnalazione({
@@ -56,12 +78,32 @@ export function useSegnalatoreApp(role?: string) {
   const selectedReport = detailQuery.report ?? visibleReports.find((report) => report.id === selectedReportId);
   const listErrorMessage = reportsQuery.error ? getFriendlySegnalazioniError(LIST_ERROR_MESSAGE) : "";
   const detailErrorMessage = detailQuery.error ? getFriendlySegnalazioniError(DETAIL_ERROR_MESSAGE) : "";
-  const isCreateDisabled = createReport.isPending;
+  const operationalScopeState = getOperationalScopeLoadState(
+    operationalScopeQuery.isLoading,
+    Boolean(operationalScopeQuery.error),
+    operationalScopeQuery.scope,
+  );
+  const isCreateDisabled = createReport.isPending || operationalScopeState !== "ready";
+  const draftWithOperationalDefaults = operationalScopeState === "ready"
+    ? applySingleOperationalScopeSelection(draft, operationalScopeQuery.scope)
+    : draft;
 
   const handleDraftChange = (field: keyof DraftReport) => (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
-    setDraft((current) => ({ ...current, [field]: event.target.value }));
+    const value = event.target.value;
+    setDraft((current) => {
+      if (field === "contractId") {
+        return { ...current, contractId: value, siteId: "", plantId: "", areaId: "" };
+      }
+      if (field === "siteId") {
+        return { ...current, siteId: value, plantId: "", areaId: "" };
+      }
+      if (field === "plantId") {
+        return { ...current, plantId: value, areaId: "" };
+      }
+      return { ...current, [field]: value };
+    });
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -75,14 +117,40 @@ export function useSegnalatoreApp(role?: string) {
 
     if (createReport.isPending) return;
 
-    if (!draft.title.trim() || !draft.description.trim()) {
+    if (operationalScopeState === "loading") {
+      setCreateErrorMessage("");
+      setMessage("");
+      return;
+    }
+
+    if (operationalScopeState === "error") {
+      setCreateErrorMessage(OPERATIONAL_SCOPE_ERROR_MESSAGE);
+      return;
+    }
+
+    if (!hasAvailableOperationalScope(operationalScopeQuery.scope)) {
+      setCreateErrorMessage(OPERATIONAL_SCOPE_EMPTY_MESSAGE);
+      return;
+    }
+
+    if (
+      !draftWithOperationalDefaults.contractId &&
+      !draftWithOperationalDefaults.siteId &&
+      !draftWithOperationalDefaults.plantId &&
+      !draftWithOperationalDefaults.areaId
+    ) {
+      setCreateErrorMessage(OPERATIONAL_SCOPE_REQUIRED_MESSAGE);
+      return;
+    }
+
+    if (!draftWithOperationalDefaults.title.trim() || !draftWithOperationalDefaults.description.trim()) {
       setCreateErrorMessage("Compila Titolo e Descrizione.");
       return;
     }
 
     setCreateErrorMessage("");
     setMessage("");
-    createReport.createSegnalazione(draft);
+    createReport.createSegnalazione(draftWithOperationalDefaults);
   };
 
   const handleAction = (action: string, report: SegnalatoreReport) => {
@@ -126,12 +194,16 @@ export function useSegnalatoreApp(role?: string) {
     attachments,
     communications,
     createErrorMessage: createErrorMessage || (createReport.error ? getFriendlySegnalazioniError(CREATE_ERROR_MESSAGE) : ""),
-    draft,
+    draft: draftWithOperationalDefaults,
     emptyListMessage: EMPTY_LIST_MESSAGE,
     isCreateDisabled,
+    isCreatePending: createReport.isPending,
     isDetailLoading: detailQuery.isLoading || detailQuery.isFetching,
     isReportsLoading: reportsQuery.isLoading,
     message,
+    operationalScope: operationalScopeQuery.scope,
+    operationalScopeErrorMessage: operationalScopeQuery.error ? getFriendlySegnalazioniError(OPERATIONAL_SCOPE_ERROR_MESSAGE) : "",
+    operationalScopeState,
     roleGroup,
     roleLabel,
     detailErrorMessage,
@@ -146,6 +218,7 @@ export function useSegnalatoreApp(role?: string) {
     handleFileChange,
     handleSubmit,
     refetchReports: reportsQuery.refetch,
+    refetchOperationalScope: operationalScopeQuery.refetch,
     refetchSelectedReport: detailQuery.refetch,
     setActiveTab,
   };

@@ -6,6 +6,22 @@
 **Commit analizzato:** `be966fa` (`master`)  
 **Metodo:** analisi statica completa del repository, cronologia Git, schema e migration, type-check non scrivente, lint non scrivente, audit dipendenze npm e tentativo di connessione read-only al database configurato.
 
+## Aggiornamento operativo — 12 luglio 2026
+
+Implementato l'Organizational Scope Resolver per Segnalazioni:
+
+- aggiunto contratto applicativo `app/src/modules/core/application/organizational-scope` con use case, port, policy e tipi DTO minimali;
+- aggiunto repository Drizzle `app/api/core/organizational-scope` su `contracts`, `sites` e `microclimate_sites`;
+- esposta la query protetta `segnalazioni.availableScope`;
+- aggiornata `segnalazioni.create` per validare lato backend appalto, sede, impianto e area selezionati;
+- bloccati id fuori scope e combinazioni incoerenti appalto/sede/impianto;
+- aggiornata `SegnalatoreApp` per caricare contesti reali, mostrare loading/empty/error e inviare solo id selezionati;
+- rimossi i mock appalto/commessa dal flusso runtime Segnalazioni;
+- aggiunti test unitari, router, UI e integration test MySQL opt-in con cleanup mirato;
+- documentata l'architettura in `docs/architecture/ORGANIZATIONAL_SCOPE_RESOLVER.md`.
+
+Limiti residui: `companies.id` resta tenant boundary temporaneo, plant usa `microclimate_sites`, le aree operative non hanno ancora tabella affidabile, audit atomico/allegati/commenti/workflow restano fuori scope.
+
 ## Aggiornamento operativo — 11 luglio 2026
 
 Collegata la UI SegnalatoreApp alle API reali Segnalazioni:

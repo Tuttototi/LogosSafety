@@ -1,6 +1,10 @@
 import type { DraftReport, SafetyCommunication, SegnalatoreRoleGroup } from "./types";
 
 export const defaultDraft: DraftReport = {
+  contractId: "",
+  siteId: "",
+  plantId: "",
+  areaId: "",
   title: "",
   description: "",
   priority: "Media",

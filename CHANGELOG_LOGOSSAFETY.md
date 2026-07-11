@@ -1,5 +1,18 @@
 # Changelog LogosSafety
 
+## 12 luglio 2026
+
+### Core / Segnalazioni — Organizational Scope Resolver
+
+- Aggiunto il contratto applicativo `organizational-scope` per caricare appalti/commesse, sedi, impianti e aree accessibili all'attore.
+- Aggiunto repository Drizzle `DrizzleOrganizationalScopeRepository` su `contracts`, `sites` e `microclimate_sites`, filtrato da Core Identity Context e scope assegnati.
+- Esposta la procedura protetta `segnalazioni.availableScope` con DTO minimali per il frontend.
+- Aggiornata `segnalazioni.create` per validare lato backend gli id operativi selezionati e bloccare combinazioni appalto/sede/impianto incoerenti.
+- Aggiornata `SegnalatoreApp` per rimuovere mock appalti, caricare opzioni reali, gestire loading/empty/error e inviare solo id autorizzati.
+- Aggiunti test unitari, test router, test UI mapper/hook e integration test MySQL opt-in sul resolver reale.
+- Documentata l'architettura in `docs/architecture/ORGANIZATIONAL_SCOPE_RESOLVER.md`.
+- Nessuna modifica a schema DB, migrazioni, auth, workflow, allegati, commenti, sidebar o PHP.
+
 ## 11 luglio 2026
 
 ### Segnalazioni — SegnalatoreApp collegata alle API

@@ -1,6 +1,8 @@
 import type {
+  AvailableOperationalScope,
   CreateSegnalazionePayload,
   DraftReport,
+  OperationalScopeLoadState,
   ReportPriority,
   SegnalatoreReport,
   SegnalazioneDetailDto,
@@ -19,6 +21,10 @@ export const LIST_ERROR_MESSAGE = "Impossibile caricare le segnalazioni. Riprova
 export const DETAIL_ERROR_MESSAGE = "Impossibile caricare il dettaglio. Riprova.";
 export const EMPTY_LIST_MESSAGE = "Nessuna segnalazione disponibile";
 export const ATTACHMENTS_DISABLED_MESSAGE = "Allegati disponibili in un prossimo aggiornamento.";
+export const OPERATIONAL_SCOPE_LOADING_MESSAGE = "Caricamento contesti operativi...";
+export const OPERATIONAL_SCOPE_EMPTY_MESSAGE = "Nessun appalto o impianto disponibile per il tuo profilo";
+export const OPERATIONAL_SCOPE_ERROR_MESSAGE = "Impossibile caricare i contesti operativi. Riprova.";
+export const OPERATIONAL_SCOPE_REQUIRED_MESSAGE = "Seleziona un appalto, sede o impianto disponibile.";
 
 export const DEFAULT_CREATE_CATEGORY = "Sicurezza" as const;
 export const DEFAULT_CREATE_TYPE = "Pericolo" as const;
@@ -71,8 +77,59 @@ export function mapPriorityToSeverity(priority: ReportPriority): ReportPriority 
   return priority;
 }
 
-export function buildCreateSegnalazionePayload(draft: DraftReport): CreateSegnalazionePayload {
+export function hasAvailableOperationalScope(scope?: AvailableOperationalScope): boolean {
+  return Boolean(
+    scope &&
+    (
+      scope.contracts.length > 0 ||
+      scope.sites.length > 0 ||
+      scope.plants.length > 0 ||
+      scope.areas.length > 0
+    ),
+  );
+}
+
+export function getOperationalScopeLoadState(
+  isLoading: boolean,
+  hasError: boolean,
+  scope?: AvailableOperationalScope,
+): OperationalScopeLoadState {
+  if (isLoading) return "loading";
+  if (hasError) return "error";
+  return hasAvailableOperationalScope(scope) ? "ready" : "empty";
+}
+
+export function getSingleOperationalScopeSelection(
+  scope?: AvailableOperationalScope,
+): Partial<Pick<DraftReport, "contractId" | "siteId" | "plantId" | "areaId">> {
+  if (!scope) return {};
+
   return {
+    contractId: scope.contracts.length === 1 ? scope.contracts[0]?.id : undefined,
+    siteId: scope.sites.length === 1 ? scope.sites[0]?.id : undefined,
+    plantId: scope.plants.length === 1 ? scope.plants[0]?.id : undefined,
+    areaId: scope.areas.length === 1 ? scope.areas[0]?.id : undefined,
+  };
+}
+
+export function buildOperationalScopePayload(draft: DraftReport): CreateSegnalazionePayload["organizationalScope"] {
+  const organizationalScope = Object.fromEntries(
+    Object.entries({
+      contractId: draft.contractId || undefined,
+      siteId: draft.siteId || undefined,
+      plantId: draft.plantId || undefined,
+      areaId: draft.areaId || undefined,
+    }).filter((entry): entry is [string, string] => Boolean(entry[1])),
+  ) as CreateSegnalazionePayload["organizationalScope"];
+
+  return organizationalScope && Object.values(organizationalScope).some(Boolean)
+    ? organizationalScope
+    : undefined;
+}
+
+export function buildCreateSegnalazionePayload(draft: DraftReport): CreateSegnalazionePayload {
+  const organizationalScope = buildOperationalScopePayload(draft);
+  const payload: CreateSegnalazionePayload = {
     title: draft.title.trim(),
     description: draft.description.trim(),
     priority: draft.priority,
@@ -80,6 +137,12 @@ export function buildCreateSegnalazionePayload(draft: DraftReport): CreateSegnal
     category: DEFAULT_CREATE_CATEGORY,
     type: DEFAULT_CREATE_TYPE,
   };
+
+  if (organizationalScope) {
+    payload.organizationalScope = organizationalScope;
+  }
+
+  return payload;
 }
 
 export function getFriendlySegnalazioniError(fallback: string): string {

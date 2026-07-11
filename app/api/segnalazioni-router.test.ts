@@ -26,6 +26,15 @@ import {
   type SegnalazioniApiDependencies,
   type SegnalazioniDependencyFactory,
 } from "./segnalazioni";
+import {
+  OperationalScopeErrorCode,
+  fail as failScope,
+  ok as okScope,
+  type AccessibleOperationalScope,
+  type OperationalScopeSelection,
+  type OrganizationalScopeRepository,
+  type OrganizationalScopeActor,
+} from "@/modules/core/application/organizational-scope";
 
 const baseScope: OrganizationalScope = {
   tenantId: "logos-safety-local",
@@ -198,10 +207,90 @@ function createActorResolver(options: {
   };
 }
 
+const accessibleScope: AccessibleOperationalScope = {
+  contracts: [{ id: "contract-a", code: "CTR-A", name: "Commessa A", siteId: "site-a" }],
+  sites: [{ id: "site-a", name: "Sede A", contractId: "contract-a" }],
+  plants: [{ id: "plant-a", name: "Impianto A", siteId: "site-a", contractId: "contract-a" }],
+  areas: [],
+};
+
+function createScopeRepository(options: {
+  scope?: AccessibleOperationalScope;
+  invalidSelections?: OperationalScopeSelection[];
+  incoherentSelections?: OperationalScopeSelection[];
+  calls?: { validate?: OperationalScopeSelection[]; list?: OrganizationalScopeActor[] };
+} = {}): OrganizationalScopeRepository {
+  const scope = options.scope ?? accessibleScope;
+  return {
+    listContractsByActorScope: async () => scope.contracts,
+    listSitesByActorScope: async () => scope.sites,
+    listPlantsByActorScope: async () => scope.plants,
+    listAreasByActorScope: async () => scope.areas,
+    listAccessibleScope: async (actor) => {
+      options.calls?.list?.push(actor);
+      return scope;
+    },
+    validateOperationalSelection: async (_actor, selection) => {
+      options.calls?.validate?.push(selection ?? {});
+      const invalid = options.invalidSelections?.some((item) =>
+        item.contractId === selection?.contractId &&
+        item.siteId === selection?.siteId &&
+        item.plantId === selection?.plantId
+      );
+      if (invalid) {
+        return failScope(OperationalScopeErrorCode.Forbidden, "Operational scope is not available");
+      }
+      const incoherent = options.incoherentSelections?.some((item) =>
+        item.contractId === selection?.contractId &&
+        item.siteId === selection?.siteId &&
+        item.plantId === selection?.plantId
+      );
+      if (incoherent) {
+        return failScope(OperationalScopeErrorCode.InvalidSelection, "Operational scope is incoherent");
+      }
+      return okScope({
+        tenantId: baseScope.tenantId,
+        companyId: baseScope.companyId,
+        contractId: selection?.contractId,
+        siteId: selection?.siteId ?? scope.contracts.find((item) => item.id === selection?.contractId)?.siteId,
+        plantId: selection?.plantId,
+        areaId: selection?.areaId,
+      });
+    },
+  };
+}
+
+function createScopeFactory(repository: OrganizationalScopeRepository) {
+  return () => repository;
+}
+
 describe("segnalazioni tRPC router", () => {
+  it("exposes only minimal accessible operational scope DTOs", async () => {
+    const listCalls: OrganizationalScopeActor[] = [];
+    const router = createSegnalazioniRouter(
+      createDependencyFactory(),
+      createActorResolver(),
+      createScopeFactory(createScopeRepository({ calls: { list: listCalls } })),
+    );
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    const result = await caller.availableScope();
+
+    expect(listCalls).toHaveLength(1);
+    expect(result.contracts).toEqual([{ id: "contract-a", code: "CTR-A", name: "Commessa A", siteId: "site-a" }]);
+    expect(result.sites).toEqual([{ id: "site-a", name: "Sede A", contractId: "contract-a" }]);
+    expect(result.plants).toEqual([{ id: "plant-a", name: "Impianto A", siteId: "site-a", contractId: "contract-a" }]);
+    expect(result).not.toHaveProperty("tenantId");
+    expect(result.contracts[0]).not.toHaveProperty("clientCompanyId");
+  });
+
   it("creates a segnalazione from authenticated server context", async () => {
     const calls = { create: [] as CreateSegnalazioneInput[] };
-    const router = createSegnalazioniRouter(createDependencyFactory({ calls }), createActorResolver());
+    const router = createSegnalazioniRouter(
+      createDependencyFactory({ calls }),
+      createActorResolver(),
+      createScopeFactory(createScopeRepository()),
+    );
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.create({
@@ -223,6 +312,79 @@ describe("segnalazioni tRPC router", () => {
       companyId: baseScope.companyId,
       plantId: "plant-a",
     });
+  });
+
+  it("creates a segnalazione with a valid accessible contract scope", async () => {
+    const calls = {
+      create: [] as CreateSegnalazioneInput[],
+      validate: [] as OperationalScopeSelection[],
+    };
+    const router = createSegnalazioniRouter(
+      createDependencyFactory({ calls }),
+      createActorResolver(),
+      createScopeFactory(createScopeRepository({ calls })),
+    );
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    await caller.create({
+      title: "Parapetto instabile",
+      description: "Il parapetto del ponteggio non risulta fissato correttamente.",
+      priority: PrioritaSegnalazione.Alta,
+      severity: GravitaSegnalazione.Alta,
+      category: CategoriaSegnalazione.Sicurezza,
+      type: TipoSegnalazione.Pericolo,
+      organizationalScope: { contractId: "contract-a" },
+    });
+
+    expect(calls.validate[0]).toEqual({ contractId: "contract-a" });
+    expect(calls.create[0]?.organizationalScope).toMatchObject({
+      tenantId: baseScope.tenantId,
+      companyId: baseScope.companyId,
+      contractId: "contract-a",
+      siteId: "site-a",
+    });
+  });
+
+  it("blocks create with a contract outside actor scope", async () => {
+    const router = createSegnalazioniRouter(
+      createDependencyFactory(),
+      createActorResolver(),
+      createScopeFactory(createScopeRepository({
+        invalidSelections: [{ contractId: "outside-contract" }],
+      })),
+    );
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    await expect(caller.create({
+      title: "Parapetto instabile",
+      description: "Il parapetto del ponteggio non risulta fissato correttamente.",
+      priority: PrioritaSegnalazione.Alta,
+      severity: GravitaSegnalazione.Alta,
+      category: CategoriaSegnalazione.Sicurezza,
+      type: TipoSegnalazione.Pericolo,
+      organizationalScope: { contractId: "outside-contract" },
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("blocks create with incoherent contract and site selection", async () => {
+    const router = createSegnalazioniRouter(
+      createDependencyFactory(),
+      createActorResolver(),
+      createScopeFactory(createScopeRepository({
+        incoherentSelections: [{ contractId: "contract-a", siteId: "other-site" }],
+      })),
+    );
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    await expect(caller.create({
+      title: "Parapetto instabile",
+      description: "Il parapetto del ponteggio non risulta fissato correttamente.",
+      priority: PrioritaSegnalazione.Alta,
+      severity: GravitaSegnalazione.Alta,
+      category: CategoriaSegnalazione.Sicurezza,
+      type: TipoSegnalazione.Pericolo,
+      organizationalScope: { contractId: "contract-a", siteId: "other-site" },
+    })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
   it("denies anonymous create calls", async () => {
@@ -322,12 +484,16 @@ describe("segnalazioni tRPC router", () => {
   });
 
   it("filters list results by plant scope", async () => {
-    const router = createSegnalazioniRouter(createDependencyFactory({
-      reports: [
-        makeSegnalazione({ id: "plant-a", organizationalScope: { ...baseScope, plantId: "plant-a" } }),
-        makeSegnalazione({ id: "plant-b", organizationalScope: { ...baseScope, plantId: "plant-b" } }),
-      ],
-    }), createActorResolver());
+    const router = createSegnalazioniRouter(
+      createDependencyFactory({
+        reports: [
+          makeSegnalazione({ id: "plant-a", organizationalScope: { ...baseScope, plantId: "plant-a" } }),
+          makeSegnalazione({ id: "plant-b", organizationalScope: { ...baseScope, plantId: "plant-b" } }),
+        ],
+      }),
+      createActorResolver(),
+      createScopeFactory(createScopeRepository()),
+    );
     const caller = router.createCaller(createContext(createTestUser()));
 
     const result = await caller.list({ organizationalScope: { plantId: "plant-a" } });

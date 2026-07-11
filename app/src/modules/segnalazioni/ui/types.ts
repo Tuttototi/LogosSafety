@@ -38,6 +38,10 @@ export type SegnalatoreReport = {
 };
 
 export type DraftReport = {
+  contractId: string;
+  siteId: string;
+  plantId: string;
+  areaId: string;
   title: string;
   description: string;
   priority: ReportPriority;
@@ -96,4 +100,30 @@ export type CreateSegnalazionePayload = {
   severity: ReportPriority;
   category: "Sicurezza";
   type: "Pericolo";
+  organizationalScope?: {
+    contractId?: string;
+    siteId?: string;
+    plantId?: string;
+    areaId?: string;
+  };
 };
+
+export type OperationalScopeOption = {
+  id: string;
+  name: string;
+  code?: string;
+  siteId?: string;
+  contractId?: string;
+  plantId?: string;
+};
+
+export type AvailableOperationalScope = {
+  contracts: OperationalScopeOption[];
+  sites: OperationalScopeOption[];
+  plants: OperationalScopeOption[];
+  areas: OperationalScopeOption[];
+};
+
+export type OperationalScopeField = "contractId" | "siteId" | "plantId" | "areaId";
+
+export type OperationalScopeLoadState = "loading" | "error" | "empty" | "ready";

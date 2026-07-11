@@ -38,9 +38,14 @@ export function SegnalatoreApp(props: Readonly<SegnalatoreAppProps>) {
           errorMessage={state.createErrorMessage}
           idPrefix={idPrefix}
           isMobile={isMobile}
-          isSubmitting={state.isCreateDisabled}
+          isSubmitDisabled={state.isCreateDisabled}
+          isSubmitting={state.isCreatePending}
+          operationalScope={state.operationalScope}
+          operationalScopeErrorMessage={state.operationalScopeErrorMessage}
+          operationalScopeState={state.operationalScopeState}
           onDraftChange={state.handleDraftChange}
           onFileChange={state.handleFileChange}
+          onRetryOperationalScope={state.refetchOperationalScope}
           onSubmit={state.handleSubmit}
         />
       )}

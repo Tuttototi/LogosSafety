@@ -1,6 +1,8 @@
+import { TRPCError } from "@trpc/server";
 import { createRouter, authedQuery } from "../middleware";
 import { buildSegnalazioniActor } from "./actor";
 import { createSegnalazioniDependencies, type SegnalazioniDependencyFactory } from "./dependencies";
+import { DrizzleOrganizationalScopeRepository } from "../core/organizational-scope";
 import {
   toSegnalazioneDetailDto,
   toSegnalazioneListItemDto,
@@ -13,14 +15,22 @@ import {
   listSegnalazioniInputSchema,
   type ListSegnalazioniApiInput,
 } from "./schemas";
-import { buildScopeFromInput } from "./scope";
 import type { Segnalazione } from "@/modules/segnalazioni/domain";
 import type { ApplicationActor } from "@/modules/segnalazioni/application";
+import {
+  OperationalScopeErrorCode,
+  createListAccessibleOperationalScopeUseCase,
+  createResolveOperationalScopeUseCase,
+  type OperationalScopeResult,
+  type OrganizationalScopeRepository,
+  type ResolvedOperationalScope,
+} from "@/modules/core/application/organizational-scope";
 import type { TrpcContext } from "../context";
 import { CoreIdentityError, CoreIdentityErrorCode } from "../core/identity";
 
 type NormalizedListSegnalazioniApiInput = NonNullable<ListSegnalazioniApiInput>;
 export type SegnalazioniActorResolver = (ctx: TrpcContext) => Promise<ApplicationActor>;
+export type OrganizationalScopeRepositoryFactory = (ctx: TrpcContext) => OrganizationalScopeRepository;
 
 async function defaultActorResolver(ctx: TrpcContext): Promise<ApplicationActor> {
   if (!ctx.user) {
@@ -48,16 +58,46 @@ function sortReports(
   });
 }
 
+function defaultScopeRepositoryFactory(): OrganizationalScopeRepository {
+  return new DrizzleOrganizationalScopeRepository();
+}
+
+function unwrapOperationalScopeResult(
+  result: OperationalScopeResult<ResolvedOperationalScope>,
+): ResolvedOperationalScope {
+  if (result.success) return result.data;
+
+  throw new TRPCError({
+    code: result.error.code === OperationalScopeErrorCode.Forbidden ? "FORBIDDEN" : "BAD_REQUEST",
+    message: result.error.message,
+  });
+}
+
 export function createSegnalazioniRouter(
   dependencyFactory: SegnalazioniDependencyFactory = createSegnalazioniDependencies,
   actorResolver: SegnalazioniActorResolver = defaultActorResolver,
+  scopeRepositoryFactory: OrganizationalScopeRepositoryFactory = defaultScopeRepositoryFactory,
 ) {
   return createRouter({
+    availableScope: authedQuery.query(async ({ ctx }) => {
+      try {
+        const actor = await actorResolver(ctx);
+        const repository = scopeRepositoryFactory(ctx);
+        return createListAccessibleOperationalScopeUseCase(repository)(actor);
+      } catch (error) {
+        mapUnexpectedSegnalazioniError(error);
+      }
+    }),
+
     create: authedQuery
       .input(createSegnalazioneInputSchema)
       .mutation(async ({ ctx, input }) => {
         try {
           const actor = await actorResolver(ctx);
+          const scopeRepository = scopeRepositoryFactory(ctx);
+          const organizationalScope = unwrapOperationalScopeResult(
+            await createResolveOperationalScopeUseCase(scopeRepository)(actor, input.organizationalScope),
+          );
           const deps = dependencyFactory(ctx);
           const segnalazione = unwrapResult(await deps.createSegnalazione({
             actor,
@@ -67,7 +107,7 @@ export function createSegnalazioniRouter(
             severity: input.severity,
             category: input.category,
             type: input.type,
-            organizationalScope: buildScopeFromInput(actor, input.organizationalScope),
+            organizationalScope,
           }));
 
           return toSegnalazioneDetailDto(segnalazione);
@@ -88,7 +128,9 @@ export function createSegnalazioniRouter(
           const sortDirection = normalizedInput.sortDirection ?? "desc";
           const deps = dependencyFactory(ctx);
           const organizationalScope = normalizedInput.organizationalScope
-            ? buildScopeFromInput(actor, normalizedInput.organizationalScope)
+            ? unwrapOperationalScopeResult(
+              await createResolveOperationalScopeUseCase(scopeRepositoryFactory(ctx))(actor, normalizedInput.organizationalScope),
+            )
             : undefined;
 
           const visibleReports: Segnalazione[] = unwrapResult(await deps.listVisibleSegnalazioni({

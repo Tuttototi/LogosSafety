@@ -7,14 +7,20 @@ import {
   DETAIL_ERROR_MESSAGE,
   EMPTY_LIST_MESSAGE,
   LIST_ERROR_MESSAGE,
+  OPERATIONAL_SCOPE_EMPTY_MESSAGE,
+  OPERATIONAL_SCOPE_ERROR_MESSAGE,
+  OPERATIONAL_SCOPE_LOADING_MESSAGE,
   buildCreateSegnalazionePayload,
   formatOperationalScope,
+  getOperationalScopeLoadState,
+  getSingleOperationalScopeSelection,
   getFriendlySegnalazioniError,
   mapDetailToReport,
   mapListItemToReport,
   mapPriorityToSeverity,
 } from "@/modules/segnalazioni/ui/mappers/segnalazioni-ui-mapper";
 import type {
+  AvailableOperationalScope,
   DraftReport,
   SegnalazioneDetailDto,
   SegnalazioniListItemDto,
@@ -38,6 +44,26 @@ const listItem: SegnalazioniListItemDto = {
   createdAt: "2026-07-11T10:00:00.000Z",
   updatedAt: "2026-07-11T11:00:00.000Z",
 };
+
+const availableScope: AvailableOperationalScope = {
+  contracts: [{ id: "contract-1", code: "CTR-1", name: "Commessa 1", siteId: "site-1" }],
+  sites: [{ id: "site-1", name: "Sede 1", contractId: "contract-1" }],
+  plants: [{ id: "plant-1", name: "Impianto 1", siteId: "site-1", contractId: "contract-1" }],
+  areas: [],
+};
+
+function makeDraft(overrides: Partial<DraftReport> = {}): DraftReport {
+  return {
+    contractId: "",
+    siteId: "",
+    plantId: "",
+    areaId: "",
+    title: "Titolo",
+    description: "Descrizione sufficientemente lunga",
+    priority: "Media",
+    ...overrides,
+  };
+}
 
 describe("SegnalatoreApp UI mapping", () => {
   it("maps backend list DTOs to visible report cards", () => {
@@ -86,11 +112,13 @@ describe("SegnalatoreApp UI mapping", () => {
   });
 
   it("builds create payload without tenant, company, reporter or role fields", () => {
-    const draft: DraftReport = {
+    const draft: DraftReport = makeDraft({
       title: "  Transenna danneggiata  ",
       description: "  La transenna vicino alla baia di carico risulta instabile.  ",
       priority: "Media",
-    };
+      contractId: "contract-1",
+      siteId: "site-1",
+    });
 
     const payload = buildCreateSegnalazionePayload(draft);
 
@@ -101,6 +129,10 @@ describe("SegnalatoreApp UI mapping", () => {
       severity: "Media",
       category: DEFAULT_CREATE_CATEGORY,
       type: DEFAULT_CREATE_TYPE,
+      organizationalScope: {
+        contractId: "contract-1",
+        siteId: "site-1",
+      },
     });
     expect(payload).not.toHaveProperty("tenantId");
     expect(payload).not.toHaveProperty("companyId");
@@ -110,24 +142,35 @@ describe("SegnalatoreApp UI mapping", () => {
   });
 
   it("trims create title and description before calling the API", () => {
-    const payload = buildCreateSegnalazionePayload({
+    const payload = buildCreateSegnalazionePayload(makeDraft({
       title: "  Titolo reale  ",
       description: "  Descrizione reale della segnalazione  ",
       priority: "Bassa",
-    });
+    }));
 
     expect(payload.title).toBe("Titolo reale");
     expect(payload.description).toBe("Descrizione reale della segnalazione");
   });
 
-  it("does not include organization scope when the appalto query is not available", () => {
-    const payload = buildCreateSegnalazionePayload({
-      title: "Titolo",
-      description: "Descrizione sufficientemente lunga",
-      priority: "Media",
-    });
+  it("does not include organization scope when no context is selected", () => {
+    const payload = buildCreateSegnalazionePayload(makeDraft());
 
     expect(payload).not.toHaveProperty("organizationalScope");
+  });
+
+  it("includes only authorized operational ids selected by the user", () => {
+    const payload = buildCreateSegnalazionePayload(makeDraft({
+      contractId: "contract-1",
+      plantId: "plant-1",
+    }));
+
+    expect(payload.organizationalScope).toEqual({
+      contractId: "contract-1",
+      plantId: "plant-1",
+    });
+    expect(payload.organizationalScope).not.toHaveProperty("tenantId");
+    expect(payload.organizationalScope).not.toHaveProperty("companyId");
+    expect(payload.organizationalScope).not.toHaveProperty("role");
   });
 
   it("derives initial severity from the selected priority", () => {
@@ -136,11 +179,11 @@ describe("SegnalatoreApp UI mapping", () => {
   });
 
   it("uses explicit domain defaults for category and type", () => {
-    const payload = buildCreateSegnalazionePayload({
+    const payload = buildCreateSegnalazionePayload(makeDraft({
       title: "Titolo",
       description: "Descrizione sufficientemente lunga",
       priority: "Alta",
-    });
+    }));
 
     expect(payload.category).toBe("Sicurezza");
     expect(payload.type).toBe("Pericolo");
@@ -168,6 +211,22 @@ describe("SegnalatoreApp UI mapping", () => {
     expect(ATTACHMENTS_DISABLED_MESSAGE).toContain("prossimo aggiornamento");
   });
 
+  it("maps operational scope loading empty error states", () => {
+    expect(getOperationalScopeLoadState(true, false, undefined)).toBe("loading");
+    expect(getOperationalScopeLoadState(false, true, undefined)).toBe("error");
+    expect(getOperationalScopeLoadState(false, false, { contracts: [], sites: [], plants: [], areas: [] })).toBe("empty");
+    expect(getOperationalScopeLoadState(false, false, availableScope)).toBe("ready");
+  });
+
+  it("preselects single available operational options", () => {
+    expect(getSingleOperationalScopeSelection(availableScope)).toEqual({
+      contractId: "contract-1",
+      siteId: "site-1",
+      plantId: "plant-1",
+      areaId: undefined,
+    });
+  });
+
   it("keeps user-facing states and errors sanitized", () => {
     expect(getFriendlySegnalazioniError(CREATE_ERROR_MESSAGE)).toBe(CREATE_ERROR_MESSAGE);
     expect(LIST_ERROR_MESSAGE).toBe("Impossibile caricare le segnalazioni. Riprova.");
@@ -175,5 +234,8 @@ describe("SegnalatoreApp UI mapping", () => {
     expect(DETAIL_ERROR_MESSAGE).toBe("Impossibile caricare il dettaglio. Riprova.");
     expect(EMPTY_LIST_MESSAGE).toBe("Nessuna segnalazione disponibile");
     expect(ATTACHMENTS_DISABLED_MESSAGE).toBe("Allegati disponibili in un prossimo aggiornamento.");
+    expect(OPERATIONAL_SCOPE_LOADING_MESSAGE).toBe("Caricamento contesti operativi...");
+    expect(OPERATIONAL_SCOPE_EMPTY_MESSAGE).toBe("Nessun appalto o impianto disponibile per il tuo profilo");
+    expect(OPERATIONAL_SCOPE_ERROR_MESSAGE).toBe("Impossibile caricare i contesti operativi. Riprova.");
   });
 });
