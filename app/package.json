@@ -13,7 +13,7 @@
     "check": "npm run security:secrets && tsc -b",
     "format": "prettier --write .",
     "test": "vitest run",
-    "uat:seed:segnalazioni": "esbuild scripts/seed-segnalazioni-uat-users.ts --platform=node --bundle --format=cjs --outfile=node_modules/.tmp/seed-segnalazioni-uat-users.cjs && node -r dotenv/config node_modules/.tmp/seed-segnalazioni-uat-users.cjs",
+    "uat:seed:segnalazioni": "esbuild scripts/seed-segnalazioni-uat-users.ts --platform=node --bundle --format=cjs --outfile=node_modules/.tmp/seed-segnalazioni-uat-users.cjs && node node_modules/.tmp/seed-segnalazioni-uat-users.cjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push"

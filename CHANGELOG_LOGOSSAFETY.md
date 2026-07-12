@@ -2,6 +2,13 @@
 
 ## 12 luglio 2026
 
+### Auth — DEV login UAT su avvio locale normale
+
+- Allineato il caricamento server-side delle variabili locali a `.env`, `.env.local`, `.env.development` e `.env.development.local`.
+- Allineato lo script `npm run uat:seed:segnalazioni` allo stesso loader, evitando il preload separato di sola `.env`.
+- Aggiunta diagnostica sicura per il DEV login UAT con codici `DEV_DATABASE_UNAVAILABLE`, `DEV_UAT_FIXTURE_NOT_FOUND` e `DEV_UAT_IDENTITY_INVALID`.
+- Verificato il seed UAT idempotente e il login reale Admin/Segnalatore da `npm run dev` senza override manuali di processo.
+
 ### Auth — guard login e logout UAT
 
 - Aggiunta guard unica React per proteggere tutte le route applicative e lasciare pubblica solo `/login`.

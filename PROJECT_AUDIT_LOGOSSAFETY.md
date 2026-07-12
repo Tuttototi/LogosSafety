@@ -8,6 +8,17 @@
 
 ## Aggiornamento operativo — 12 luglio 2026
 
+Corretto blocco DEV login UAT su avvio locale normale:
+
+- il server ora carica in sequenza `.env`, `.env.local`, `.env.development` e `.env.development.local`, mantenendo priorita' alle variabili gia' esportate dalla shell;
+- creato/aggiornato localmente `app/.env.local` ignorato da Git con URL MySQL locale `localhost:3306/logos_safety`;
+- mantenute fuori dal repository le credenziali del container locale;
+- `npm run uat:seed:segnalazioni` passa senza override manuali ed e' idempotente;
+- `/api/dev/login?identity=admin` e `/api/dev/login?identity=segnalatore` restituiscono session cookie e redirect attesi;
+- gli errori DEV login vengono classificati con codici diagnostici sicuri senza esporre connection string o password.
+
+Limiti residui: `.env.local` e' locale alla macchina di sviluppo; un nuovo checkout deve creare un proprio file locale con credenziali del proprio container MySQL.
+
 Corretto flusso autenticazione locale e UAT:
 
 - introdotta guard React unica sulle route protette con redirect a `/login`;

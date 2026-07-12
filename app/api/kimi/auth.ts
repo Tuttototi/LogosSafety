@@ -167,6 +167,36 @@ type DevLoginHandlerDependencies = {
   signToken?: typeof signSessionToken;
 };
 
+type DevLoginErrorCode =
+  | "DEV_DATABASE_UNAVAILABLE"
+  | "DEV_UAT_FIXTURE_NOT_FOUND"
+  | "DEV_UAT_IDENTITY_INVALID"
+  | "DEV_UAT_LOGIN_FAILED";
+
+function classifyDevLoginError(error: unknown): DevLoginErrorCode {
+  const message = getErrorMessage(error);
+
+  if (message.includes("Unsupported DEV identity")) {
+    return "DEV_UAT_IDENTITY_INVALID";
+  }
+
+  if (
+    /Access denied|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|getaddrinfo|connect|DATABASE_URL|DEV_DATABASE_URL|database host|local port|logos_safety database/i
+      .test(message)
+  ) {
+    return "DEV_DATABASE_UNAVAILABLE";
+  }
+
+  if (
+    /UAT .* was not created|fixture|worker was not created|user was not created|company was not created|scope/i
+      .test(message)
+  ) {
+    return "DEV_UAT_FIXTURE_NOT_FOUND";
+  }
+
+  return "DEV_UAT_LOGIN_FAILED";
+}
+
 export function createDevLoginHandler(
   dependencies: DevLoginHandlerDependencies = {},
 ) {
@@ -201,8 +231,9 @@ export function createDevLoginHandler(
 
       return c.redirect(getDevLoginRedirectHash(identity.role), 302);
     } catch (error) {
-      console.error("[DEV auth] Login failed", error);
-      return c.json({ error: "DEV login fixture unavailable" }, 500);
+      const code = classifyDevLoginError(error);
+      console.error(`[DEV auth] ${code}: ${getErrorMessage(error)}`);
+      return c.json({ error: code }, 500);
     }
   };
 }

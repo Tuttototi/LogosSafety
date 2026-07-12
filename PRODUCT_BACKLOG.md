@@ -10,6 +10,7 @@
 | Core Identity | Implementare Core Identity Context backend con adapter legacy e integrazione Segnalazioni | Completato |
 | Core / Segnalazioni | Implementare Organizational Scope Resolver e query appalti/commesse visibili | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
+| Auth / Segnalazioni | Rendere funzionante il DEV login UAT con configurazione DB locale normale | Completato |
 | Auth / Segnalazioni | Correggere guard route protette, logout e login UAT locale | Completato |
 | Segnalazioni | Creare utenti UAT locali Admin e Segnalatore con login DEV e Core Identity | Completato |
 | Segnalazioni | Collegare AuditPort e NotificationPort a outbox/audit persistente atomico | Completato |

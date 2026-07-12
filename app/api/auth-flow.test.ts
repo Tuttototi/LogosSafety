@@ -2,8 +2,15 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { Session } from "@contracts/constants";
 import { createDevLoginHandler } from "./kimi/auth";
-import { selectDatabaseUrlForEnvironment } from "./lib/env";
+import {
+  describeDatabaseUrl,
+  loadLocalEnvFiles,
+  selectDatabaseUrlForEnvironment,
+} from "./lib/env";
 import type { SessionIdentity } from "./kimi/types";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 function createDevAuthApp(options: {
   devAuthEnabled?: boolean;
@@ -32,6 +39,47 @@ describe("auth flow", () => {
       DEV_DATABASE_URL: "mysql://root@localhost:3306/logos_safety",
       DATABASE_URL: "mysql://root:secret@localhost:3306/logos_safety",
     })).toBe("mysql://root:secret@localhost:3306/logos_safety");
+  });
+
+  it("loads ignored local env files after .env without overriding shell variables", () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "logos-env-"));
+    fs.writeFileSync(
+      path.join(tempDir, ".env"),
+      [
+        "DEV_DATABASE_URL=mysql://root@localhost:3306/logos_safety",
+        "DATABASE_URL=mysql://root@localhost:3306/logos_safety",
+        "SHELL_ONLY=from-env",
+      ].join("\n"),
+    );
+    fs.writeFileSync(
+      path.join(tempDir, ".env.local"),
+      [
+        "DEV_DATABASE_URL=mysql://root:local-secret@localhost:3306/logos_safety",
+        "SHELL_ONLY=from-local",
+      ].join("\n"),
+    );
+    const env = {
+      NODE_ENV: "development",
+      SHELL_ONLY: "from-shell",
+    } as NodeJS.ProcessEnv;
+
+    const loadedFiles = loadLocalEnvFiles(tempDir, env);
+
+    expect(loadedFiles).toEqual([".env", ".env.local"]);
+    expect(env.DEV_DATABASE_URL).toBe("mysql://root:local-secret@localhost:3306/logos_safety");
+    expect(env.DATABASE_URL).toBe("mysql://root@localhost:3306/logos_safety");
+    expect(env.SHELL_ONLY).toBe("from-shell");
+  });
+
+  it("describes database URLs without exposing credentials", () => {
+    expect(describeDatabaseUrl("mysql://root:local-secret@localhost:3306/logos_safety")).toEqual({
+      protocol: "mysql",
+      host: "localhost",
+      port: "3306",
+      database: "logos_safety",
+      hasUsername: true,
+      hasPassword: true,
+    });
   });
 
   it("keeps DEV_DATABASE_URL when it has complete credentials", () => {
@@ -101,7 +149,48 @@ describe("auth flow", () => {
     const response = await app.request("http://localhost/api/dev/login?identity=admin");
 
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: "DEV login fixture unavailable" });
+    await expect(response.json()).resolves.toEqual({ error: "DEV_UAT_FIXTURE_NOT_FOUND" });
+  });
+
+  it("returns a diagnostic database error when local DEV database is unavailable", async () => {
+    const app = createDevAuthApp({
+      seedUatUsers: async () => {
+        throw new Error("Access denied for user root");
+      },
+    });
+
+    const response = await app.request("http://localhost/api/dev/login?identity=admin");
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "DEV_DATABASE_UNAVAILABLE" });
+  });
+
+  it("returns a diagnostic identity error for unsupported DEV identities", async () => {
+    const app = createDevAuthApp({});
+
+    const response = await app.request("http://localhost/api/dev/login?identity=superuser");
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "DEV_UAT_IDENTITY_INVALID" });
+  });
+
+  it("ignores client role query parameters when issuing DEV sessions", async () => {
+    const issuedTokens: SessionIdentity[] = [];
+    const app = createDevAuthApp({
+      signToken: async (payload) => {
+        issuedTokens.push(payload);
+        return "admin-token";
+      },
+    });
+
+    const response = await app.request("http://localhost/api/dev/login?identity=admin&role=superuser");
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe("/#/segnalazioni");
+    expect(issuedTokens).toEqual([{
+      unionId: "uat-segnalazioni-admin",
+      clientId: "logos-safety-test",
+    }]);
   });
 
   it("switches Admin to Segnalatore only by issuing a new backend session", async () => {

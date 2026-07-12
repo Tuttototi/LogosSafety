@@ -15,6 +15,22 @@ Gli utenti sono disponibili solo su database locale e DEV auth. Non sono un seco
 - Variabile `DEV_DATABASE_URL` o `DATABASE_URL` puntata al database locale.
 - Non usare database remoti o produzione.
 
+Il server carica le variabili locali da:
+
+- `.env`;
+- `.env.local`;
+- `.env.development`;
+- `.env.development.local`.
+
+Le variabili gia' esportate dalla shell hanno priorita'. Per lo sviluppo locale usare un file ignorato da Git, per esempio `app/.env.local`, con valori placeholder del proprio container:
+
+```bash
+DEV_DATABASE_URL=mysql://root:<password-locale>@localhost:3306/logos_safety
+DATABASE_URL=mysql://root:<password-locale>@localhost:3306/logos_safety
+```
+
+Non committare mai password reali.
+
 ## Seed
 
 Eseguire dalla cartella `app`:
@@ -75,6 +91,12 @@ Endpoint diretti:
 - `/api/dev/login?identity=segnalatore`.
 
 La selezione identita' DEV e' disponibile solo se `DEV_AUTH_ENABLED=true` e non in produzione.
+
+In caso di errore il browser riceve solo codici diagnostici sicuri:
+
+- `DEV_DATABASE_UNAVAILABLE`;
+- `DEV_UAT_FIXTURE_NOT_FOUND`;
+- `DEV_UAT_IDENTITY_INVALID`.
 
 Redirect attesi:
 

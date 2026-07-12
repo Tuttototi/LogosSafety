@@ -1,9 +1,46 @@
-import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
+import dotenv from "dotenv";
 
 type DatabaseEnvInput = Pick<
   NodeJS.ProcessEnv,
   "NODE_ENV" | "DEV_DATABASE_URL" | "DATABASE_URL"
 >;
+
+function getLocalEnvFiles(mode: string): string[] {
+  return [
+    ".env",
+    ".env.local",
+    `.env.${mode}`,
+    `.env.${mode}.local`,
+  ];
+}
+
+export function loadLocalEnvFiles(
+  cwd = process.cwd(),
+  source: NodeJS.ProcessEnv = process.env,
+): string[] {
+  const shellDefinedKeys = new Set(Object.keys(source));
+  const mode = source.NODE_ENV || "development";
+  const loadedFiles: string[] = [];
+
+  for (const fileName of getLocalEnvFiles(mode)) {
+    const envPath = path.resolve(cwd, fileName);
+    if (!fs.existsSync(envPath)) continue;
+
+    const parsed = dotenv.parse(fs.readFileSync(envPath));
+    for (const [key, value] of Object.entries(parsed)) {
+      if (!shellDefinedKeys.has(key)) {
+        source[key] = value;
+      }
+    }
+    loadedFiles.push(fileName);
+  }
+
+  return loadedFiles;
+}
+
+loadLocalEnvFiles();
 
 function required(name: string, source: NodeJS.ProcessEnv = process.env): string {
   const value = source[name];
@@ -61,6 +98,29 @@ export function selectDatabaseUrlForEnvironment(
   }
 
   return devDatabaseUrl || required("DATABASE_URL", source as NodeJS.ProcessEnv);
+}
+
+export function describeDatabaseUrl(
+  value: string,
+): {
+  protocol: string;
+  host: string;
+  port: string;
+  database: string;
+  hasUsername: boolean;
+  hasPassword: boolean;
+} | null {
+  const parsed = parseDatabaseUrl(value);
+  if (!parsed) return null;
+
+  return {
+    protocol: parsed.protocol.replace(":", ""),
+    host: parsed.hostname,
+    port: normalizePort(parsed),
+    database: parsed.pathname.replace("/", ""),
+    hasUsername: Boolean(parsed.username),
+    hasPassword: Boolean(parsed.password),
+  };
 }
 
 const isProduction = process.env.NODE_ENV === "production";
