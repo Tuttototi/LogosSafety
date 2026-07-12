@@ -21,6 +21,7 @@ import {
   FileSpreadsheet,
   Menu,
   Thermometer,
+  UserCog,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +35,7 @@ import { trpc } from "@/providers/trpc";
 
 const AUDIT_ROLES = new Set(["admin", "responsabile_sicurezza", "auditor"]);
 const IMPORT_ROLES = new Set(["admin", "responsabile_sicurezza", "operatore_sicurezza", "medico_competente", "referente_commessa", "auditor", "sola_lettura"]);
+const ADMIN_IDENTITY_ROLES = new Set(["admin"]);
 
 type SidebarItem = {
   path: string;
@@ -75,6 +77,7 @@ function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => voi
   const items = useMemo(() => {
     const base = [
       ...navItems,
+      ...(role && ADMIN_IDENTITY_ROLES.has(role) ? [{ path: "/anagrafiche-utenti", label: "Anagrafiche e Utenti", icon: UserCog }] : []),
       ...(role && AUDIT_ROLES.has(role) ? [{ path: "/audit", label: "Audit Log", icon: BookOpen }] : []),
       ...(role && IMPORT_ROLES.has(role) ? [{ path: "/import-export", label: "Import / Export", icon: FileSpreadsheet }] : []),
     ];

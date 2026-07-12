@@ -7,8 +7,15 @@ export type AuthRouteDecision =
   | { state: "allow" }
   | { state: "redirect"; to: string };
 
+const SAFETY_APP_ROLES = new Set([
+  "segnalatore",
+  "dipendente",
+  "operatore",
+  "capo_impianto",
+]);
+
 export function getPostLoginRedirectPath(role?: string | null): string {
-  if (role === "segnalatore") {
+  if (role && SAFETY_APP_ROLES.has(role)) {
     return "/segnalazioni/app";
   }
 

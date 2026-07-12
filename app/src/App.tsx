@@ -11,6 +11,7 @@ import Impostazioni from "@/pages/Impostazioni";
 import AuditLog from "@/pages/AuditLog";
 import ImportExport from "@/pages/ImportExport";
 import Microclima from "@/pages/Microclima";
+import AnagraficheUtenti from "@/pages/AnagraficheUtenti";
 import Login from "@/pages/Login";
 import Segnalazioni from "@/pages/Segnalazioni";
 import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp/index";
@@ -77,6 +78,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/anagrafiche-utenti"
+        element={
+          <ProtectedRoute>
+            <AnagraficheUtenti />
           </ProtectedRoute>
         }
       />

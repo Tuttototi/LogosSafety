@@ -56,6 +56,9 @@ describe("auth route guard decisions", () => {
   it("builds UAT login redirect hashes without trusting client role data", () => {
     expect(getPostLoginRedirectPath("admin")).toBe("/segnalazioni");
     expect(getPostLoginRedirectPath("segnalatore")).toBe("/segnalazioni/app");
+    expect(getPostLoginRedirectPath("dipendente")).toBe("/segnalazioni/app");
+    expect(getPostLoginRedirectPath("operatore")).toBe("/segnalazioni/app");
+    expect(getPostLoginRedirectPath("capo_impianto")).toBe("/segnalazioni/app");
     expect(getDevLoginRedirectHash("admin")).toBe("/#/segnalazioni");
     expect(getDevLoginRedirectHash("segnalatore")).toBe("/#/segnalazioni/app");
   });

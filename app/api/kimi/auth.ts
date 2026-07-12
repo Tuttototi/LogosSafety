@@ -11,10 +11,9 @@ import { users as kimiUsers } from "./platform";
 import { findUserByUnionId, upsertUser } from "../queries/users";
 import type { TokenResponse } from "./types";
 import {
-  assertDevIdentitySelectionAllowed,
-  getUatIdentity,
-  seedSegnalazioniUatUsers,
-} from "../dev/segnalazioni-uat-users";
+  bootstrapRealAdmin,
+  type RealAdminBootstrapSummary,
+} from "../dev/real-admin-bootstrap";
 import { getDevLoginRedirectHash } from "@/lib/auth-routing";
 
 function getErrorMessage(error: unknown): string {
@@ -163,22 +162,17 @@ type DevLoginEnvironment = Pick<
 
 type DevLoginHandlerDependencies = {
   authEnv?: DevLoginEnvironment;
-  seedUatUsers?: (options: { databaseUrl?: string }) => Promise<unknown>;
+  bootstrapAdmin?: (options: { databaseUrl?: string }) => Promise<RealAdminBootstrapSummary>;
   signToken?: typeof signSessionToken;
 };
 
 type DevLoginErrorCode =
   | "DEV_DATABASE_UNAVAILABLE"
-  | "DEV_UAT_FIXTURE_NOT_FOUND"
-  | "DEV_UAT_IDENTITY_INVALID"
-  | "DEV_UAT_LOGIN_FAILED";
+  | "DEV_ADMIN_BOOTSTRAP_NOT_FOUND"
+  | "DEV_ADMIN_LOGIN_FAILED";
 
 function classifyDevLoginError(error: unknown): DevLoginErrorCode {
   const message = getErrorMessage(error);
-
-  if (message.includes("Unsupported DEV identity")) {
-    return "DEV_UAT_IDENTITY_INVALID";
-  }
 
   if (
     /Access denied|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|getaddrinfo|connect|DATABASE_URL|DEV_DATABASE_URL|database host|local port|logos_safety database/i
@@ -188,13 +182,13 @@ function classifyDevLoginError(error: unknown): DevLoginErrorCode {
   }
 
   if (
-    /UAT .* was not created|fixture|worker was not created|user was not created|company was not created|scope/i
+    /Admin .* was not created|Local .* was not created|bootstrap|worker was not created|user was not created|company was not created|scope|duplicated/i
       .test(message)
   ) {
-    return "DEV_UAT_FIXTURE_NOT_FOUND";
+    return "DEV_ADMIN_BOOTSTRAP_NOT_FOUND";
   }
 
-  return "DEV_UAT_LOGIN_FAILED";
+  return "DEV_ADMIN_LOGIN_FAILED";
 }
 
 export function createDevLoginHandler(
@@ -202,7 +196,7 @@ export function createDevLoginHandler(
 ) {
   return async (c: Context) => {
     const currentEnv = dependencies.authEnv ?? env;
-    const seedUatUsers = dependencies.seedUatUsers ?? seedSegnalazioniUatUsers;
+    const runBootstrapAdmin = dependencies.bootstrapAdmin ?? bootstrapRealAdmin;
     const signToken = dependencies.signToken ?? signSessionToken;
 
     if (!currentEnv.devAuthEnabled || currentEnv.isProduction) {
@@ -210,15 +204,10 @@ export function createDevLoginHandler(
     }
 
     try {
-      assertDevIdentitySelectionAllowed({
-        devAuthEnabled: currentEnv.devAuthEnabled,
-        isProduction: currentEnv.isProduction,
-      });
-      const identity = getUatIdentity(c.req.query("identity"));
-      await seedUatUsers({ databaseUrl: currentEnv.databaseUrl });
+      const bootstrap = await runBootstrapAdmin({ databaseUrl: currentEnv.databaseUrl });
 
       const token = await signToken({
-        unionId: identity.unionId,
+        unionId: bootstrap.admin.unionId,
         clientId: currentEnv.appId || "dev",
       });
 
@@ -229,7 +218,7 @@ export function createDevLoginHandler(
       });
       clearLegacySessionCookies(c, cookieOpts);
 
-      return c.redirect(getDevLoginRedirectHash(identity.role), 302);
+      return c.redirect(getDevLoginRedirectHash(bootstrap.admin.role), 302);
     } catch (error) {
       const code = classifyDevLoginError(error);
       console.error(`[DEV auth] ${code}: ${getErrorMessage(error)}`);

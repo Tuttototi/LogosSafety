@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "uat:seed:segnalazioni": "esbuild scripts/seed-segnalazioni-uat-users.ts --platform=node --bundle --format=cjs --outfile=node_modules/.tmp/seed-segnalazioni-uat-users.cjs && node node_modules/.tmp/seed-segnalazioni-uat-users.cjs",
+    "admin:bootstrap": "esbuild scripts/bootstrap-real-admin.ts --platform=node --bundle --format=cjs --outfile=node_modules/.tmp/bootstrap-real-admin.cjs && node node_modules/.tmp/bootstrap-real-admin.cjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push"

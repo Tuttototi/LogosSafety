@@ -2,6 +2,17 @@
 
 ## 12 luglio 2026
 
+### Admin — Anagrafiche e Utenti reali
+
+- Aggiunto bootstrap locale idempotente dell'admin reale con persona `workers`, account `users` e scope company in `user_organization_scopes`.
+- Rimosso dal login normale il doppio pulsante DEV "Admin UAT" / "Segnalatore UAT"; il DEV login locale identifica l'account admin configurato dal backend senza selezione ruolo frontend.
+- Aggiunta pagina `/anagrafiche-utenti`, visibile solo ad admin, per elenco persone/account, ricerca, filtri, creazione persona senza account e abilitazione account.
+- Aggiunto router tRPC `adminIdentity` con DTO Zod strict per list/detail/create/update/enable account/status/role/scope.
+- Validati lato backend ruoli Core, scope company/sede/appalto/impianto e boundary company dell'admin risolto da `CoreIdentityService`.
+- Auditati eventi persona/account/ruolo/scope con metadata sanitizzati senza codice fiscale completo.
+- Documentata la procedura in `docs/admin/ANAGRAFICHE_UTENTI.md`.
+- Nessun nuovo sistema auth, nessun bypass Core Identity, nessuna migrazione generale persons/memberships/role_assignments.
+
 ### Auth — DEV login UAT su avvio locale normale
 
 - Allineato il caricamento server-side delle variabili locali a `.env`, `.env.local`, `.env.development` e `.env.development.local`.

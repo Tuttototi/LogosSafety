@@ -10,6 +10,7 @@
 | Core Identity | Implementare Core Identity Context backend con adapter legacy e integrazione Segnalazioni | Completato |
 | Core / Segnalazioni | Implementare Organizational Scope Resolver e query appalti/commesse visibili | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
+| Admin / Identity | Implementare Anagrafiche e Utenti con admin reale, persone, account, ruoli e scope | Completato |
 | Auth / Segnalazioni | Rendere funzionante il DEV login UAT con configurazione DB locale normale | Completato |
 | Auth / Segnalazioni | Correggere guard route protette, logout e login UAT locale | Completato |
 | Segnalazioni | Creare utenti UAT locali Admin e Segnalatore con login DEV e Core Identity | Completato |
@@ -56,6 +57,7 @@
 | Segnalazioni | Normalizzare modello Core per impianti e aree operative | Completa il resolver oltre `microclimate_sites` e abilita aree reali | Aperto |
 | Segnalazioni | Implementare allegati reali e allegati commento | Completa il flusso operativo multimediale | Aperto |
 | Core Domain | Migrare gli adapter legacy identity verso tabelle Core dedicate persons/memberships/role_assignments/tenants | Necessario per superare il boundary temporaneo basato su schema legacy | Aperto |
+| Admin / Identity | Estendere Anagrafiche e Utenti con import Excel, export Excel e gestione massiva | Completa la gestione enterprise dopo la vertical slice manuale | Aperto |
 | Sicurezza | Definire matrice RBAC ruolo-permesso basata su Core Domain | Necessario per sostituire gerarchie ruolo hardcoded | Aperto |
 | Audit | Esporre query/API/UI admin per `audit_log_entries` e definire retention policy | Completa consultazione compliance del nuovo audit globale | Aperto |
 | Notifiche | Implementare worker outbox con retry/backoff e provider canali | Trasforma outbox persistente in notifiche consegnate | Aperto |

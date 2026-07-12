@@ -15,7 +15,18 @@ import path from "node:path";
 function createDevAuthApp(options: {
   devAuthEnabled?: boolean;
   isProduction?: boolean;
-  seedUatUsers?: () => Promise<unknown>;
+  bootstrapAdmin?: () => Promise<{
+    admin: {
+      unionId: string;
+      email: string;
+      name: string;
+      role: "admin";
+      userId: number;
+      workerId: number;
+    };
+    roleEnumUpdated: boolean;
+    company: { id: number; name: string };
+  }>;
   signToken?: (payload: SessionIdentity) => Promise<string>;
 }) {
   const app = new Hono();
@@ -26,7 +37,18 @@ function createDevAuthApp(options: {
       devAuthEnabled: options.devAuthEnabled ?? true,
       isProduction: options.isProduction ?? false,
     },
-    seedUatUsers: async () => options.seedUatUsers?.(),
+    bootstrapAdmin: async () => options.bootstrapAdmin?.() ?? ({
+      roleEnumUpdated: false,
+      company: { id: 1, name: "Logos Safety Test" },
+      admin: {
+        unionId: "local:safety.genoma@log6s.it",
+        email: "safety.genoma@log6s.it",
+        name: "Salvatore Candura",
+        role: "admin",
+        userId: 10,
+        workerId: 20,
+      },
+    }),
     signToken: options.signToken ?? (async (payload) => `token:${payload.unionId}`),
   }));
   return app;
@@ -99,7 +121,7 @@ describe("auth flow", () => {
     await expect(response.json()).resolves.toEqual({ error: "Not available in production" });
   });
 
-  it("creates an Admin UAT session and redirects to Segnalazioni", async () => {
+  it("creates the local Admin session without frontend role selection", async () => {
     const issuedTokens: SessionIdentity[] = [];
     const app = createDevAuthApp({
       signToken: async (payload) => {
@@ -108,73 +130,44 @@ describe("auth flow", () => {
       },
     });
 
-    const response = await app.request("http://localhost/api/dev/login?identity=admin");
+    const response = await app.request("http://localhost/api/dev/login");
 
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toBe("/#/segnalazioni");
     expect(response.headers.get("set-cookie")).toContain(`${Session.cookieName}=admin-token`);
     expect(issuedTokens).toEqual([{
-      unionId: "uat-segnalazioni-admin",
+      unionId: "local:safety.genoma@log6s.it",
       clientId: "logos-safety-test",
     }]);
   });
 
-  it("creates a Segnalatore UAT session and redirects to the mobile app", async () => {
-    const issuedTokens: SessionIdentity[] = [];
+  it("returns a controlled error when the local Admin bootstrap is unavailable", async () => {
     const app = createDevAuthApp({
-      signToken: async (payload) => {
-        issuedTokens.push(payload);
-        return "segnalatore-token";
+      bootstrapAdmin: async () => {
+        throw new Error("Local Admin account was not created");
       },
     });
 
-    const response = await app.request("http://localhost/api/dev/login?identity=segnalatore");
-
-    expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toBe("/#/segnalazioni/app");
-    expect(response.headers.get("set-cookie")).toContain(`${Session.cookieName}=segnalatore-token`);
-    expect(issuedTokens).toEqual([{
-      unionId: "uat-segnalazioni-segnalatore",
-      clientId: "logos-safety-test",
-    }]);
-  });
-
-  it("returns a controlled error when the UAT fixture is unavailable", async () => {
-    const app = createDevAuthApp({
-      seedUatUsers: async () => {
-        throw new Error("fixture unavailable");
-      },
-    });
-
-    const response = await app.request("http://localhost/api/dev/login?identity=admin");
+    const response = await app.request("http://localhost/api/dev/login");
 
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: "DEV_UAT_FIXTURE_NOT_FOUND" });
+    await expect(response.json()).resolves.toEqual({ error: "DEV_ADMIN_BOOTSTRAP_NOT_FOUND" });
   });
 
   it("returns a diagnostic database error when local DEV database is unavailable", async () => {
     const app = createDevAuthApp({
-      seedUatUsers: async () => {
+      bootstrapAdmin: async () => {
         throw new Error("Access denied for user root");
       },
     });
 
-    const response = await app.request("http://localhost/api/dev/login?identity=admin");
+    const response = await app.request("http://localhost/api/dev/login");
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({ error: "DEV_DATABASE_UNAVAILABLE" });
   });
 
-  it("returns a diagnostic identity error for unsupported DEV identities", async () => {
-    const app = createDevAuthApp({});
-
-    const response = await app.request("http://localhost/api/dev/login?identity=superuser");
-
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: "DEV_UAT_IDENTITY_INVALID" });
-  });
-
-  it("ignores client role query parameters when issuing DEV sessions", async () => {
+  it("ignores client role and identity query parameters when issuing DEV sessions", async () => {
     const issuedTokens: SessionIdentity[] = [];
     const app = createDevAuthApp({
       signToken: async (payload) => {
@@ -183,31 +176,13 @@ describe("auth flow", () => {
       },
     });
 
-    const response = await app.request("http://localhost/api/dev/login?identity=admin&role=superuser");
+    const response = await app.request("http://localhost/api/dev/login?identity=segnalatore&role=superuser");
 
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toBe("/#/segnalazioni");
     expect(issuedTokens).toEqual([{
-      unionId: "uat-segnalazioni-admin",
+      unionId: "local:safety.genoma@log6s.it",
       clientId: "logos-safety-test",
     }]);
-  });
-
-  it("switches Admin to Segnalatore only by issuing a new backend session", async () => {
-    const issuedTokens: SessionIdentity[] = [];
-    const app = createDevAuthApp({
-      signToken: async (payload) => {
-        issuedTokens.push(payload);
-        return `token:${payload.unionId}`;
-      },
-    });
-
-    await app.request("http://localhost/api/dev/login?identity=admin");
-    await app.request("http://localhost/api/dev/login?identity=segnalatore");
-
-    expect(issuedTokens.map((token) => token.unionId)).toEqual([
-      "uat-segnalazioni-admin",
-      "uat-segnalazioni-segnalatore",
-    ]);
   });
 });

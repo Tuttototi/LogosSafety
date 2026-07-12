@@ -10,6 +10,7 @@ import { documentRouter } from "./document-router";
 import { auditRouter } from "./audit-router";
 import { importRouter } from "./import-router";
 import { segnalazioniRouter } from "./segnalazioni";
+import { adminIdentityRouter } from "./admin-identity-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -26,6 +27,7 @@ export const appRouter = createRouter({
   audit: auditRouter,
   import: importRouter,
   segnalazioni: segnalazioniRouter,
+  adminIdentity: adminIdentityRouter,
 });
 
 export type AppRouter = typeof appRouter;

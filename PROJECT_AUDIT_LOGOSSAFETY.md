@@ -8,6 +8,21 @@
 
 ## Aggiornamento operativo — 12 luglio 2026
 
+Implementato il primo flusso amministrativo reale Anagrafiche e Utenti:
+
+- creato bootstrap locale/dev idempotente per l'admin reale, con guard production e database locale;
+- mantenuta la correzione di `ad473cd` sul caricamento env locale;
+- rimosso dal normale flusso UI il selettore DEV Admin UAT / Segnalatore UAT;
+- collegato il DEV login locale all'account admin configurato dal backend, senza scelta ruolo lato frontend;
+- aggiunta pagina `/anagrafiche-utenti` visibile solo ad admin;
+- aggiunte API tRPC protette `adminIdentity` per persone, account, ruoli e scope;
+- usato il mapping temporaneo `workers` = Persona, `users` = Account, `user_organization_scopes` = Scope;
+- validati ruoli Core e perimetro company/sede/appalto/impianto lato backend;
+- auditati create/update persona, account, ruolo e scope senza codice fiscale completo nei metadata;
+- documentato il flusso in `docs/admin/ANAGRAFICHE_UTENTI.md`.
+
+Limiti residui: il modello fisico Core dedicato persons/memberships/role_assignments non e' ancora migrato; `user_organization_scopes` non persiste ancora impianto/area; import Excel lavoratori/appalti resta slice successiva.
+
 Corretto blocco DEV login UAT su avvio locale normale:
 
 - il server ora carica in sequenza `.env`, `.env.local`, `.env.development` e `.env.development.local`, mantenendo priorita' alle variabili gia' esportate dalla shell;

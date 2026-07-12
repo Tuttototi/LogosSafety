@@ -66,54 +66,22 @@ export default function Login() {
                   Entra nel portale
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Seleziona il metodo di accesso più adatto e prosegui con il lavoro.
+                  Accedi con l'identità aziendale configurata per il tuo account.
                 </p>
               </div>
 
               <div className="space-y-3">
-                {devAuthEnabled && (
-                  <div className="space-y-3">
-                    <Button
-                      className="w-full justify-between gap-2 rounded-2xl py-6 text-base"
-                      size="lg"
-                      onClick={() => {
-                        window.location.href = "/api/dev/login?identity=admin";
-                      }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4" />
-                        Accesso locale Admin UAT
-                      </span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      className="w-full justify-between gap-2 rounded-2xl py-6 text-base"
-                      size="lg"
-                      variant="outline"
-                      onClick={() => {
-                        window.location.href = "/api/dev/login?identity=segnalatore";
-                      }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4" />
-                        Accesso locale Segnalatore UAT
-                      </span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-
                 <Button
                   className="w-full justify-between gap-2 rounded-2xl border-red-200 py-6 text-base text-red-700 hover:bg-red-50"
-                  variant={devAuthEnabled ? "outline" : "default"}
+                  variant="default"
                   size="lg"
                   onClick={() => {
-                    window.location.href = getOAuthUrl();
+                    window.location.href = devAuthEnabled ? "/api/dev/login" : getOAuthUrl();
                   }}
                 >
                   <span className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4" />
-                    Accedi con Kimi
+                    Accedi a Logos Safety
                   </span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
