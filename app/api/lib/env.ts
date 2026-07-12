@@ -15,16 +15,6 @@ const databaseUrl =
   (!isProduction && process.env.DEV_DATABASE_URL?.trim()) ||
   required("DATABASE_URL");
 
-function requiredForDevAuth(name: string): string {
-  const value = process.env[name]?.trim();
-  if (devAuthEnabled && !value) {
-    throw new Error(
-      `Missing required environment variable for dev auth: ${name}`
-    );
-  }
-  return value ?? "";
-}
-
 export const env = {
   appId: required("APP_ID"),
   appSecret: required("APP_SECRET"),
@@ -34,7 +24,4 @@ export const env = {
   kimiOpenUrl: required("KIMI_OPEN_URL"),
   ownerUnionId: process.env.OWNER_UNION_ID ?? "",
   devAuthEnabled,
-  devAdminUnionId: requiredForDevAuth("DEV_ADMIN_UNION_ID"),
-  devAdminEmail: requiredForDevAuth("DEV_ADMIN_EMAIL"),
-  devAdminName: requiredForDevAuth("DEV_ADMIN_NAME"),
 };

@@ -10,6 +10,7 @@ Classificazione proposta: READY FOR USER ACCEPTANCE se i gate automatici e il co
 - Database MySQL locale dedicato a LogosSafety, non remoto e non produzione.
 - Migrazioni Segnalazioni applicate fino ad audit log e notification outbox.
 - Utenti di test con ruoli e scope organizzativi coerenti.
+- Utenti UAT locali creati con `npm run uat:seed:segnalazioni`.
 - Nessuna credenziale reale o dato sensibile nei record di prova.
 
 ## Comandi test
@@ -33,6 +34,8 @@ npm run build
 
 ## Ruoli da collaudare
 
+- Admin UAT: Salvatore Candura, login DEV `identity=admin`.
+- Segnalatore UAT: Mario Rossi, login DEV `identity=segnalatore`.
 - Segnalatore / dipendente / operatore: creazione, lista personale, dettaglio, integrazione richiesta, presa visione.
 - Capo impianto: visibilita' limitata al proprio impianto e workflow gestore.
 - Capo area: visibilita' limitata alla propria area e workflow gestore.
@@ -60,6 +63,10 @@ npm run build
 - Email, SMS, push, WhatsApp.
 - Dashboard KPI avanzate e SLA.
 
+## Utenti UAT locali
+
+Procedura dettagliata: `docs/testing/SEGNALAZIONI_UAT_USERS.md`.
+
 ## Bug noti e limiti residui
 
 - Gli allegati sono disabilitati: esistono metadati DB, ma manca uno storage sicuro riusabile con download protetto e policy RBAC.
@@ -85,4 +92,3 @@ NO-GO:
 - Errori SQL/stack trace esposti all'utente.
 - Smartphone o dashboard desktop inutilizzabili.
 - Allegati richiesti come obbligatori senza storage reale disponibile.
-

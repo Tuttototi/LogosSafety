@@ -8,6 +8,17 @@
 
 ## Aggiornamento operativo — 12 luglio 2026
 
+Creati utenti UAT locali per collaudo Segnalazioni:
+
+- aggiunta fixture idempotente `npm run uat:seed:segnalazioni`;
+- creati Admin UAT `Salvatore Candura` e Segnalatore UAT `Mario Rossi`;
+- collegato il DEV login alla selezione identita' `admin` / `segnalatore`;
+- mantenuta la risoluzione identita' tramite Core Identity Context e database;
+- aggiunti guard per bloccare seed e selezione DEV in produzione;
+- documentata procedura in `docs/testing/SEGNALAZIONI_UAT_USERS.md`.
+
+Limiti residui: le credenziali locali restano responsabilita' dell'ambiente; lo script rifiuta database remoti e non stampa secret. Il seed puo' aggiornare localmente l'enum `users.role` per accettare i ruoli Core mancanti nel database UAT.
+
 Chiusura verticale MVP del modulo Segnalazioni:
 
 - estesa la dashboard `/segnalazioni` con metriche per stato, priorita' alta/critica, filtri per stato, priorita', appalto/commessa, sede, impianto, area, autore e periodo;

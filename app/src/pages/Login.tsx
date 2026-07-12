@@ -66,19 +66,35 @@ export default function Login() {
 
               <div className="space-y-3">
                 {devAuthEnabled && (
-                  <Button
-                    className="w-full justify-between gap-2 rounded-2xl py-6 text-base"
-                    size="lg"
-                    onClick={() => {
-                      window.location.href = "/api/dev/login";
-                    }}
-                  >
-                    <span className="flex items-center gap-2">
-                      <ShieldCheck className="h-4 w-4" />
-                      Accesso locale amministratore
-                    </span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  <div className="space-y-3">
+                    <Button
+                      className="w-full justify-between gap-2 rounded-2xl py-6 text-base"
+                      size="lg"
+                      onClick={() => {
+                        window.location.href = "/api/dev/login?identity=admin";
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        Accesso locale Admin UAT
+                      </span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      className="w-full justify-between gap-2 rounded-2xl py-6 text-base"
+                      size="lg"
+                      variant="outline"
+                      onClick={() => {
+                        window.location.href = "/api/dev/login?identity=segnalatore";
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        Accesso locale Segnalatore UAT
+                      </span>
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
 
                 <Button

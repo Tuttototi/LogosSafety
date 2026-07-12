@@ -2,6 +2,14 @@
 
 ## 12 luglio 2026
 
+### Segnalazioni — utenti UAT locali
+
+- Aggiunta fixture locale idempotente per creare Admin UAT e Segnalatore UAT collegati a Core Identity.
+- Esteso il DEV login con selezione identita' `admin` e `segnalatore`, disponibile solo in ambiente non production con DEV auth abilitato.
+- Aggiunto script `npm run uat:seed:segnalazioni` con guard su database locale e `NODE_ENV=production`.
+- Documentata la procedura di collaudo in `docs/testing/SEGNALAZIONI_UAT_USERS.md`.
+- Nessun push, nessun nuovo sistema auth, nessun bypass del Core Identity Context.
+
 ### Segnalazioni — chiusura verticale MVP end-to-end
 
 - Estesa la dashboard desktop `/segnalazioni` con filtri operativi per stato, priorita', appalto/commessa, sede, impianto, area, autore e periodo.

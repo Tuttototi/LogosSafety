@@ -10,6 +10,11 @@ import { signSessionToken, verifySessionToken } from "./session";
 import { users as kimiUsers } from "./platform";
 import { findUserByUnionId, upsertUser } from "../queries/users";
 import type { TokenResponse } from "./types";
+import {
+  assertDevIdentitySelectionAllowed,
+  getUatIdentity,
+  seedSegnalazioniUatUsers,
+} from "../dev/segnalazioni-uat-users";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -156,29 +161,31 @@ export function createDevLoginHandler() {
       return c.json({ error: "Not available in production" }, 404);
     }
 
-    await upsertUser({
-      unionId: env.devAdminUnionId,
-      email: env.devAdminEmail,
-      name: env.devAdminName,
-      avatar: null,
-      role: "admin",
-      active: true,
-      lastSignInAt: new Date(),
-    });
+    try {
+      assertDevIdentitySelectionAllowed({
+        devAuthEnabled: env.devAuthEnabled,
+        isProduction: env.isProduction,
+      });
+      const identity = getUatIdentity(c.req.query("identity"));
+      await seedSegnalazioniUatUsers({ databaseUrl: env.databaseUrl });
 
-    const token = await signSessionToken({
-      unionId: env.devAdminUnionId,
-      clientId: env.appId || "dev",
-    });
+      const token = await signSessionToken({
+        unionId: identity.unionId,
+        clientId: env.appId || "dev",
+      });
 
-    const cookieOpts = getSessionCookieOptions(c.req.raw.headers);
-    setCookie(c, Session.cookieName, token, {
-      ...cookieOpts,
-      maxAge: Session.maxAgeMs / 1000,
-    });
-    clearLegacySessionCookies(c, cookieOpts);
+      const cookieOpts = getSessionCookieOptions(c.req.raw.headers);
+      setCookie(c, Session.cookieName, token, {
+        ...cookieOpts,
+        maxAge: Session.maxAgeMs / 1000,
+      });
+      clearLegacySessionCookies(c, cookieOpts);
 
-    return c.redirect("/", 302);
+      return c.redirect("/", 302);
+    } catch (error) {
+      console.error("[DEV auth] Login failed", error);
+      return c.json({ error: "DEV login fixture unavailable" }, 500);
+    }
   };
 }
 
