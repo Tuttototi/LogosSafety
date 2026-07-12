@@ -44,6 +44,7 @@ const statusSchema = z.enum([
   StatoSegnalazione.Risolta,
   StatoSegnalazione.Chiusa,
 ]);
+const periodDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const scopeInputSchema = z.object({
   contractId: nonEmptyString.optional(),
@@ -68,10 +69,18 @@ export const listSegnalazioniInputSchema = z.object({
   status: statusSchema.optional(),
   priority: prioritySchema.optional(),
   createdByMe: z.boolean().optional(),
+  createdFrom: periodDateSchema.optional(),
+  createdTo: periodDateSchema.optional(),
   organizationalScope: scopeInputSchema.optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "priority", "status"]).optional(),
   sortDirection: z.enum(["asc", "desc"]).optional(),
-}).strict().optional();
+}).strict().refine(
+  (input) => !input.createdFrom || !input.createdTo || input.createdFrom <= input.createdTo,
+  {
+    message: "createdFrom must be before or equal to createdTo",
+    path: ["createdTo"],
+  },
+).optional();
 
 export const byIdSegnalazioneInputSchema = z.object({
   id: nonEmptyString,

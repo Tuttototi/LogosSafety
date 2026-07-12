@@ -27,7 +27,8 @@ import {
   takeInChargeInputSchema,
   type ListSegnalazioniApiInput,
 } from "./schemas";
-import type { Segnalazione } from "@/modules/segnalazioni/domain";
+import { StatoSegnalazione } from "@/modules/segnalazioni/domain";
+import type { Commento, Segnalazione, WorkflowEvento } from "@/modules/segnalazioni/domain";
 import type { ApplicationActor } from "@/modules/segnalazioni/application";
 import {
   OperationalScopeErrorCode,
@@ -43,6 +44,20 @@ import { CoreIdentityError, CoreIdentityErrorCode } from "../core/identity";
 type NormalizedListSegnalazioniApiInput = NonNullable<ListSegnalazioniApiInput>;
 export type SegnalazioniActorResolver = (ctx: TrpcContext) => Promise<ApplicationActor>;
 export type OrganizationalScopeRepositoryFactory = (ctx: TrpcContext) => OrganizationalScopeRepository;
+
+export type SegnalazioniNotificationDto = {
+  id: string;
+  reportId: string;
+  reportCode: string;
+  reportTitle: string;
+  type: "taken_in_charge" | "comment_received" | "integration_requested" | "resolved" | "closed";
+  title: string;
+  message: string;
+  occurredAt: string;
+  actorDisplayName?: string;
+  read: boolean;
+  detailPath: string;
+};
 
 async function defaultActorResolver(ctx: TrpcContext): Promise<ApplicationActor> {
   if (!ctx.user) {
@@ -68,6 +83,126 @@ function sortReports(
     const comparison = bySortValue(left, sortBy).localeCompare(bySortValue(right, sortBy));
     return sortDirection === "asc" ? comparison : -comparison;
   });
+}
+
+function startOfDayIso(value: string): string {
+  return `${value}T00:00:00.000Z`;
+}
+
+function endOfDayIso(value: string): string {
+  return `${value}T23:59:59.999Z`;
+}
+
+function isCreatedInsidePeriod(
+  report: Segnalazione,
+  input: NormalizedListSegnalazioniApiInput,
+): boolean {
+  if (input.createdFrom && report.createdAt < startOfDayIso(input.createdFrom)) return false;
+  if (input.createdTo && report.createdAt > endOfDayIso(input.createdTo)) return false;
+  return true;
+}
+
+function isCurrentActor(actor: ApplicationActor, userId?: string, personId?: string): boolean {
+  return Boolean(
+    (userId && userId === actor.userId) ||
+    (personId && personId === actor.personId),
+  );
+}
+
+function buildDetailPath(reportId: string): string {
+  return `/segnalazioni?report=${encodeURIComponent(reportId)}`;
+}
+
+function workflowNotification(
+  actor: ApplicationActor,
+  report: Segnalazione,
+  event: WorkflowEvento,
+): SegnalazioniNotificationDto | undefined {
+  if (isCurrentActor(actor, event.eseguitoDaId)) return undefined;
+
+  const base = {
+    id: `${report.id}:workflow:${event.id}`,
+    reportId: report.id,
+    reportCode: report.code,
+    reportTitle: report.title,
+    occurredAt: event.createdAt,
+    actorDisplayName: event.eseguitoDaNome,
+    read: false,
+    detailPath: buildDetailPath(report.id),
+  };
+
+  if (event.statoA === StatoSegnalazione.PresaInCarico) {
+    return {
+      ...base,
+      type: "taken_in_charge",
+      title: "Segnalazione presa in carico",
+      message: `${report.code} e' stata presa in carico.`,
+    };
+  }
+
+  if (event.statoA === StatoSegnalazione.RichiestaIntegrazione) {
+    return {
+      ...base,
+      type: "integration_requested",
+      title: "Richiesta integrazione",
+      message: `Serve un'integrazione su ${report.code}.`,
+    };
+  }
+
+  if (event.statoA === StatoSegnalazione.Risolta) {
+    return {
+      ...base,
+      type: "resolved",
+      title: "Segnalazione risolta",
+      message: `${report.code} e' stata risolta.`,
+    };
+  }
+
+  if (event.statoA === StatoSegnalazione.Chiusa) {
+    return {
+      ...base,
+      type: "closed",
+      title: "Segnalazione chiusa",
+      message: `${report.code} e' stata chiusa.`,
+    };
+  }
+
+  return undefined;
+}
+
+function commentNotification(
+  actor: ApplicationActor,
+  report: Segnalazione,
+  comment: Commento,
+): SegnalazioniNotificationDto | undefined {
+  if (isCurrentActor(actor, comment.autoreId)) return undefined;
+
+  return {
+    id: `${report.id}:comment:${comment.id}`,
+    reportId: report.id,
+    reportCode: report.code,
+    reportTitle: report.title,
+    type: "comment_received",
+    title: "Nuovo commento",
+    message: `Nuovo commento su ${report.code}.`,
+    occurredAt: comment.createdAt,
+    actorDisplayName: comment.autoreNome,
+    read: false,
+    detailPath: buildDetailPath(report.id),
+  };
+}
+
+function buildSegnalazioniNotifications(
+  actor: ApplicationActor,
+  reports: readonly Segnalazione[],
+): SegnalazioniNotificationDto[] {
+  return reports.flatMap((report) => [
+    ...(report.workflow ?? []).map((event) => workflowNotification(actor, report, event)),
+    ...(report.comments ?? []).map((comment) => commentNotification(actor, report, comment)),
+  ])
+    .filter((notification): notification is SegnalazioniNotificationDto => Boolean(notification))
+    .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
+    .slice(0, 20);
 }
 
 function defaultScopeRepositoryFactory(): OrganizationalScopeRepository {
@@ -170,6 +305,7 @@ export function createSegnalazioniRouter(
           const filteredReports = visibleReports.filter((report) => {
             if (normalizedInput.status && report.status !== normalizedInput.status) return false;
             if (normalizedInput.priority && report.priority !== normalizedInput.priority) return false;
+            if (!isCreatedInsidePeriod(report, normalizedInput)) return false;
             if (
               normalizedInput.createdByMe === true &&
               report.createdByUserId !== actor.userId &&
@@ -191,6 +327,25 @@ export function createSegnalazioniRouter(
             total: sortedReports.length,
             page,
             pageSize,
+          };
+        } catch (error) {
+          mapUnexpectedSegnalazioniError(error);
+        }
+      }),
+
+    notifications: authedQuery
+      .query(async ({ ctx }) => {
+        try {
+          const actor = await actorResolver(ctx);
+          const deps = dependencyFactory(ctx);
+          const visibleReports = unwrapResult(await deps.listVisibleSegnalazioni({ actor }));
+          const items = buildSegnalazioniNotifications(actor, visibleReports);
+
+          return {
+            items,
+            unreadCount: items.filter((item) => item.read === false).length,
+            source: "timeline-derived" as const,
+            readState: "not-persisted" as const,
           };
         } catch (error) {
           mapUnexpectedSegnalazioniError(error);

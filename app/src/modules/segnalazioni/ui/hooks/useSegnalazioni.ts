@@ -1,14 +1,18 @@
 import { useMemo } from "react";
 import { trpc } from "@/providers/trpc";
 import { mapListItemToReport } from "../mappers/segnalazioni-ui-mapper";
+import type { SegnalazioniListFilters } from "../types";
 
-export function useSegnalazioni() {
-  const query = trpc.segnalazioni.list.useQuery({
+export function useSegnalazioni(filters: SegnalazioniListFilters = {}) {
+  const queryInput = useMemo(() => ({
     page: 1,
     pageSize: 50,
-    sortBy: "createdAt",
-    sortDirection: "desc",
-  }, {
+    sortBy: "createdAt" as const,
+    sortDirection: "desc" as const,
+    ...filters,
+  }), [filters]);
+
+  const query = trpc.segnalazioni.list.useQuery(queryInput, {
     retry: false,
   });
 
@@ -26,4 +30,3 @@ export function useSegnalazioni() {
     refetch: query.refetch,
   };
 }
-

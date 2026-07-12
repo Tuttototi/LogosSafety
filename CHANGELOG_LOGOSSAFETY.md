@@ -2,6 +2,17 @@
 
 ## 12 luglio 2026
 
+### Segnalazioni — chiusura verticale MVP end-to-end
+
+- Estesa la dashboard desktop `/segnalazioni` con filtri operativi per stato, priorita', appalto/commessa, sede, impianto, area, autore e periodo.
+- Collegati i filtri principali alla query tRPC `segnalazioni.list` con validazione server-side, mantenendo la sola ricerca testuale sul dataset gia' filtrato.
+- Aggiunto dettaglio operativo desktop con commenti, timeline, presa in carico, richiesta integrazione, integrazione, avanzamento stato, risoluzione, chiusura e presa visione secondo capability backend.
+- Aggiunte notifiche in-app minime tramite endpoint protetto `segnalazioni.notifications`, derivate da timeline/commenti visibili senza creare un motore notifiche generico.
+- Aggiornata invalidazione cache per lista, dettaglio e notifiche dopo create e mutazioni workflow.
+- Documentate checklist rilascio MVP e guida utente in `docs/release/SEGNALAZIONI_RELEASE_CHECKLIST.md` e `docs/user/SEGNALAZIONI_USER_GUIDE.md`.
+- Allegati reali rinviati: esistono metadati DB ma manca storage sicuro riusabile con download protetto e RBAC.
+- Stato letta/non letta notifiche rinviato: l'endpoint attuale restituisce eventi derivati e non persiste letture.
+
 ### Segnalazioni — Audit Log persistente e Notification Outbox
 
 - Sostituiti gli adapter deferred `AuditPort` e `NotificationPort` nel wiring API Segnalazioni con adapter persistenti.

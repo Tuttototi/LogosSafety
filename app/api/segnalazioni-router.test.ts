@@ -608,6 +608,111 @@ describe("segnalazioni tRPC router", () => {
     await expect(caller.list({ pageSize: 51 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
+  it("filters list results by created period server-side", async () => {
+    const router = createSegnalazioniRouter(createDependencyFactory({
+      reports: [
+        makeSegnalazione({ id: "before-period", createdAt: "2026-07-01T10:00:00.000Z" }),
+        makeSegnalazione({ id: "inside-period", createdAt: "2026-07-11T10:00:00.000Z" }),
+        makeSegnalazione({ id: "after-period", createdAt: "2026-07-20T10:00:00.000Z" }),
+      ],
+    }), createActorResolver());
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    const result = await caller.list({
+      createdFrom: "2026-07-10",
+      createdTo: "2026-07-12",
+    });
+
+    expect(result.items.map((item) => item.id)).toEqual(["inside-period"]);
+    await expect(caller.list({
+      createdFrom: "2026-07-12",
+      createdTo: "2026-07-10",
+    })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("returns in-app notifications derived from visible report timelines", async () => {
+    const router = createSegnalazioniRouter(createDependencyFactory({
+      reports: [
+        makeSegnalazione({
+          id: "notify-report",
+          code: "SEG-NOTIFY-001",
+          comments: [
+            {
+              id: "comment-self",
+              segnalazioneId: "notify-report",
+              testo: "Commento proprio non notificato",
+              autoreId: "legacy-user-1",
+              autoreNome: "Mario Rossi",
+              pubblico: true,
+              createdAt: "2026-07-11T10:00:00.000Z",
+              updatedAt: "2026-07-11T10:00:00.000Z",
+            },
+            {
+              id: "comment-other",
+              segnalazioneId: "notify-report",
+              testo: "Commento ricevuto",
+              autoreId: "manager-2",
+              autoreNome: "Laura Bianchi",
+              pubblico: true,
+              createdAt: "2026-07-11T11:00:00.000Z",
+              updatedAt: "2026-07-11T11:00:00.000Z",
+            },
+          ],
+          workflow: [
+            {
+              id: "workflow-self",
+              segnalazioneId: "notify-report",
+              statoDa: StatoSegnalazione.Nuova,
+              statoA: StatoSegnalazione.PresaInCarico,
+              eseguitoDaId: "legacy-user-1",
+              eseguitoDaNome: "Mario Rossi",
+              createdAt: "2026-07-11T09:00:00.000Z",
+            },
+            {
+              id: "workflow-request",
+              segnalazioneId: "notify-report",
+              statoDa: StatoSegnalazione.InLavorazione,
+              statoA: StatoSegnalazione.RichiestaIntegrazione,
+              eseguitoDaId: "manager-2",
+              eseguitoDaNome: "Laura Bianchi",
+              note: "Serve integrazione",
+              createdAt: "2026-07-11T12:00:00.000Z",
+            },
+            {
+              id: "workflow-resolved",
+              segnalazioneId: "notify-report",
+              statoDa: StatoSegnalazione.Integrata,
+              statoA: StatoSegnalazione.Risolta,
+              eseguitoDaId: "manager-2",
+              eseguitoDaNome: "Laura Bianchi",
+              createdAt: "2026-07-11T13:00:00.000Z",
+            },
+          ],
+        }),
+      ],
+    }), createActorResolver());
+    const caller = router.createCaller(createContext(createTestUser()));
+
+    const result = await caller.notifications();
+
+    expect(result.source).toBe("timeline-derived");
+    expect(result.readState).toBe("not-persisted");
+    expect(result.unreadCount).toBe(3);
+    expect(result.items.map((item) => item.type)).toEqual([
+      "resolved",
+      "integration_requested",
+      "comment_received",
+    ]);
+    expect(result.items[0]).toMatchObject({
+      reportId: "notify-report",
+      reportCode: "SEG-NOTIFY-001",
+      read: false,
+      detailPath: "/segnalazioni?report=notify-report",
+    });
+    expect(result.items.map((item) => item.id)).not.toContain("notify-report:workflow:workflow-self");
+    expect(result.items.map((item) => item.id)).not.toContain("notify-report:comment:comment-self");
+  });
+
   it("returns detail only for a visible report", async () => {
     const router = createSegnalazioniRouter(createDependencyFactory({
       reports: [makeSegnalazione({ id: "visible-report" })],

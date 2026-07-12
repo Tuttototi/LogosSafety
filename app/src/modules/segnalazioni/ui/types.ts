@@ -150,6 +150,34 @@ export type SegnalazioneDetailDto = SegnalazioniListItemDto & {
   closedAt?: string;
 };
 
+export type SegnalazioniListFilters = {
+  status?: ReportStatus;
+  priority?: ReportPriority;
+  createdByMe?: boolean;
+  createdFrom?: string;
+  createdTo?: string;
+  organizationalScope?: {
+    contractId?: string;
+    siteId?: string;
+    plantId?: string;
+    areaId?: string;
+  };
+};
+
+export type SegnalazioniNotificationDto = {
+  id: string;
+  reportId: string;
+  reportCode: string;
+  reportTitle: string;
+  type: "taken_in_charge" | "comment_received" | "integration_requested" | "resolved" | "closed";
+  title: string;
+  message: string;
+  occurredAt: string;
+  actorDisplayName?: string;
+  read: boolean;
+  detailPath: string;
+};
+
 export type CreateSegnalazionePayload = {
   title: string;
   description: string;

@@ -5,6 +5,7 @@ async function invalidateSegnalazione(utils: ReturnType<typeof trpc.useUtils>, i
   await Promise.all([
     utils.segnalazioni.list.invalidate(),
     utils.segnalazioni.byId.invalidate({ id }),
+    utils.segnalazioni.notifications.invalidate(),
   ]);
 }
 

@@ -8,6 +8,17 @@
 
 ## Aggiornamento operativo — 12 luglio 2026
 
+Chiusura verticale MVP del modulo Segnalazioni:
+
+- estesa la dashboard `/segnalazioni` con metriche per stato, priorita' alta/critica, filtri per stato, priorita', appalto/commessa, sede, impianto, area, autore e periodo;
+- collegati i filtri a `segnalazioni.list` con validazione server-side per periodo e scope operativo;
+- aggiunto dettaglio operativo desktop con capability backend, commenti, timeline e azioni di workflow reali;
+- aggiunta query protetta `segnalazioni.notifications` per notifiche in-app derivate da timeline/commenti visibili;
+- aggiornata invalidazione cache di lista, dettaglio e notifiche dopo create e workflow mutation;
+- documentate checklist rilascio e guida utente in `docs/release/SEGNALAZIONI_RELEASE_CHECKLIST.md` e `docs/user/SEGNALAZIONI_USER_GUIDE.md`.
+
+Limiti residui: allegati reali bloccati da assenza di storage sicuro riusabile e download protetto; notifiche in-app senza stato letta/non letta persistente; ricerca testuale ancora client-side sui risultati gia' filtrati dall'API.
+
 Implementati Audit Log persistente e Notification Outbox per Segnalazioni:
 
 - aggiunte tabelle `audit_log_entries` e `notification_outbox` con indici tenant/correlation/status/entity;

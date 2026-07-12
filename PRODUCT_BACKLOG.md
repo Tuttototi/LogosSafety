@@ -11,6 +11,7 @@
 | Core / Segnalazioni | Implementare Organizational Scope Resolver e query appalti/commesse visibili | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
 | Segnalazioni | Collegare AuditPort e NotificationPort a outbox/audit persistente atomico | Completato |
+| Segnalazioni | Chiudere MVP verticale end-to-end con dashboard gestionale, filtri, notifiche in-app e documentazione UAT | Completato |
 | Segnalazioni | Implementare workflow operativo reale, commenti, timeline e capability backend | Completato |
 | Segnalazioni | Collegare SegnalatoreApp alle API reali per lista, creazione e dettaglio | Completato |
 | Segnalazioni | Esporre API backend tRPC per creazione, lista e dettaglio con repository persistente | Completato |

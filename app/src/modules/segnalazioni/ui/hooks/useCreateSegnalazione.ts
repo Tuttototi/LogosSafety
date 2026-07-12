@@ -11,7 +11,10 @@ export function useCreateSegnalazione(options: UseCreateSegnalazioneOptions = {}
 
   const mutation = trpc.segnalazioni.create.useMutation({
     onSuccess: async (created) => {
-      await utils.segnalazioni.list.invalidate();
+      await Promise.all([
+        utils.segnalazioni.list.invalidate(),
+        utils.segnalazioni.notifications.invalidate(),
+      ]);
       options.onSuccess?.(created.id);
     },
   });
@@ -23,4 +26,3 @@ export function useCreateSegnalazione(options: UseCreateSegnalazioneOptions = {}
     reset: mutation.reset,
   };
 }
-
