@@ -9,6 +9,7 @@ import {
   boolean,
   date,
   bigint,
+  json,
   index,
   uniqueIndex,
   foreignKey,
@@ -848,6 +849,59 @@ export const segnalazioneAcknowledgements = mysqlTable("segnalazione_acknowledge
 ]);
 
 export type SegnalazioneAcknowledgementRecord = typeof segnalazioneAcknowledgements.$inferSelect;
+
+// ─── Audit Log Entries ─────────────────────────────────────────
+export const auditLogEntries = mysqlTable("audit_log_entries", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  companyId: varchar("company_id", { length: 64 }),
+  eventType: varchar("event_type", { length: 120 }).notNull(),
+  module: varchar("module", { length: 80 }).notNull(),
+  action: varchar("action", { length: 80 }).notNull(),
+  entityType: varchar("entity_type", { length: 80 }).notNull(),
+  entityId: varchar("entity_id", { length: 64 }).notNull(),
+  actorUserId: varchar("actor_user_id", { length: 64 }).notNull(),
+  actorPersonId: varchar("actor_person_id", { length: 64 }),
+  actorRole: varchar("actor_role", { length: 80 }),
+  occurredAt: timestamp("occurred_at").notNull(),
+  correlationId: varchar("correlation_id", { length: 128 }).notNull(),
+  metadata: json("metadata").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_audit_entries_tenant_occurred").on(table.tenantId, table.occurredAt),
+  index("idx_audit_entries_entity").on(table.tenantId, table.module, table.entityType, table.entityId),
+  index("idx_audit_entries_correlation").on(table.correlationId),
+  index("idx_audit_entries_actor").on(table.actorUserId),
+]);
+
+export type AuditLogEntryRecord = typeof auditLogEntries.$inferSelect;
+
+export const notificationOutbox = mysqlTable("notification_outbox", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: varchar("tenant_id", { length: 64 }).notNull(),
+  companyId: varchar("company_id", { length: 64 }),
+  eventType: varchar("event_type", { length: 120 }).notNull(),
+  module: varchar("module", { length: 80 }).notNull(),
+  entityType: varchar("entity_type", { length: 80 }).notNull(),
+  entityId: varchar("entity_id", { length: 64 }).notNull(),
+  actorUserId: varchar("actor_user_id", { length: 64 }),
+  occurredAt: timestamp("occurred_at").notNull(),
+  payload: json("payload").$type<Record<string, unknown>>().notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "processed", "failed"]).default("pending").notNull(),
+  attempts: int("attempts").default(0).notNull(),
+  availableAt: timestamp("available_at").notNull(),
+  processedAt: timestamp("processed_at"),
+  lastErrorCode: varchar("last_error_code", { length: 120 }),
+  correlationId: varchar("correlation_id", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_notification_outbox_status_available").on(table.status, table.availableAt),
+  index("idx_notification_outbox_tenant_status").on(table.tenantId, table.status),
+  index("idx_notification_outbox_correlation").on(table.correlationId),
+  index("idx_notification_outbox_entity").on(table.entityType, table.entityId),
+]);
+
+export type NotificationOutboxRecord = typeof notificationOutbox.$inferSelect;
 
 // ─── Audit Logs ─────────────────────────────────────────────────
 export const auditLogs = mysqlTable("audit_logs", {

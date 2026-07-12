@@ -142,7 +142,7 @@ Vietato:
 
 - Scopo: registrare eventi rilevanti e tracciabilita operativa.
 - Responsabilita: persistenza audit, consultazione filtrata, immutabilita logica.
-- Dati posseduti: Audit Event.
+- Dati posseduti: `audit_log_entries`.
 - Entita principali: AuditEntry, AuditEvent.
 - Use case principali: registra evento, lista audit, filtra per modulo, utente, entita e data.
 - Dipendenze consentite: Core, shared contracts, eventi pubblicati dai moduli.
@@ -150,23 +150,23 @@ Vietato:
 - Eventi pubblicati: `audit.recorded`.
 - Eventi consumati: eventi di dominio da tutti i moduli.
 - Permessi principali: `audit.view`.
-- Rischi: coupling se i moduli chiamano direttamente implementazioni concrete.
-- Roadmap: outbox/event bus interno e retention policy.
+- Rischi: router Audit legacy ancora basato su `audit_logs`.
+- Roadmap: UI/query pubbliche per `audit_log_entries` e retention policy.
 
 ### Notifiche
 
 - Scopo: orchestrare notifiche operative e solleciti.
-- Responsabilita: canali, template, stato invio, retry.
-- Dati posseduti: notifica, delivery attempt, preferenze canale future.
-- Entita principali: Notification, NotificationDelivery.
-- Use case principali: pianifica, invia, ritenta, marca esito, consulta storico.
+- Responsabilita: outbox persistente, canali futuri, template futuri, stato invio e retry futuri.
+- Dati posseduti: `notification_outbox`, notifica futura, delivery attempt futuro, preferenze canale future.
+- Entita principali: NotificationOutboxEntry, Notification, NotificationDelivery.
+- Use case principali: enqueue, trova pending, marca processing, marca processed, marca failed.
 - Dipendenze consentite: Core, shared contracts, eventi di dominio.
 - Dipendenze vietate: dipendenza diretta da repository dei moduli sorgente.
 - Eventi pubblicati: `notifiche.scheduled`, `notifiche.sent`, `notifiche.failed`.
 - Eventi consumati: eventi da Segnalazioni, Comunicazioni, Scadenze, Formazione, DPI, Sanitaria.
 - Permessi principali: futuri `notifiche.view`, `notifiche.manage`.
-- Rischi: notifiche duplicate senza idempotenza/correlation id.
-- Roadmap: outbox, retry, template e preference center.
+- Rischi: nessun worker/processore ancora disponibile.
+- Roadmap: worker outbox, retry/backoff, template e preference center.
 
 ### Formazione
 

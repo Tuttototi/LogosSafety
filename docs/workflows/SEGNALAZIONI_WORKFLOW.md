@@ -95,21 +95,28 @@ La timeline non espone payload tecnici, stack, dati economici o dati personali n
 
 ## Audit e notifiche
 
-I use case Application continuano a emettere eventi verso `AuditPort` e `NotificationPort`.
+I use case Application continuano a emettere eventi verso `AuditPort` e `NotificationPort`, senza dipendere da implementazioni concrete.
 
-In questo sprint:
+Il wiring API Segnalazioni ora usa adapter persistenti:
 
-- la timeline workflow e' persistita e visibile;
-- AuditPort e NotificationPort restano adapter deferred/noop nel boundary API;
-- non viene simulato un audit globale persistente;
-- non viene introdotto event bus o outbox.
+- `SegnalazioniAuditPort` scrive su `audit_log_entries`;
+- `SegnalazioniNotificationOutboxPort` scrive su `notification_outbox`;
+- le mutation critiche sono racchiuse da `DrizzleTransactionCoordinator`;
+- mutation operativa, workflow event, audit entry e outbox entry condividono la stessa transazione;
+- audit e outbox della stessa operazione condividono un correlationId generato server-side.
 
-La timeline operativa non sostituisce il futuro Audit Log globale.
+La timeline operativa resta separata dall'Audit Log globale:
+
+- timeline: dati operativi visibili nel dettaglio autorizzato;
+- audit: tracciamento tecnico/compliance append-only;
+- outbox: eventi notificabili futuri non ancora consegnati.
+
+`acknowledge` genera Audit Log ma non genera Notification Outbox. Una presa visione ripetuta ritorna il record esistente e non crea audit/outbox duplicati.
 
 ## Limiti residui
 
 - Non esiste ancora UI di assegnazione utenti.
 - Il ruolo dell'attore sugli eventi workflow storici non e' sempre disponibile nello schema attuale.
 - Allegati reali, mention, reaction e allegati commento restano fuori scope.
-- Audit atomico globale e notifiche reali richiedono sprint dedicati.
+- Non esistono ancora worker outbox, provider email/SMS/push/WhatsApp o UI Audit per `audit_log_entries`.
 - La concorrenza su presa in carico e' gestita a livello di stato corrente; non c'e' lock distribuito.

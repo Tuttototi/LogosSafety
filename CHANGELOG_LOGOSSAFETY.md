@@ -2,6 +2,18 @@
 
 ## 12 luglio 2026
 
+### Segnalazioni — Audit Log persistente e Notification Outbox
+
+- Sostituiti gli adapter deferred `AuditPort` e `NotificationPort` nel wiring API Segnalazioni con adapter persistenti.
+- Aggiunte le tabelle Drizzle/MySQL `audit_log_entries` e `notification_outbox`.
+- Generata e applicata localmente la migration `0003_volatile_human_cannonball.sql`.
+- Introdotto `DrizzleTransactionCoordinator` per condividere la stessa transazione tra mutation Segnalazioni, workflow event, audit e outbox.
+- Aggiunti moduli infrastrutturali `audit` e `notifications` con repository, mapping, sanitizzazione metadata e query tenant-safe.
+- Definita matrice eventi audit e matrice eventi notificabili; `acknowledge` genera audit ma non outbox.
+- Aggiunti test unitari per mapping/sanitizzazione e integration test MySQL reale su ciclo operativo, correlationId, ack idempotente, `findPending`, status outbox e rollback.
+- Documentati ADR, Audit Log, Notification Outbox e test transazionali.
+- Nessun provider email/SMS/push/WhatsApp, nessun worker outbox, nessuna UI Audit nuova.
+
 ### Segnalazioni — workflow operativo reale
 
 - Collegate alle API tRPC le mutation operative `addComment`, `requestIntegration`, `integrate`, `takeInCharge`, `changeStatus`, `resolve`, `close` e `acknowledge`.
@@ -11,7 +23,7 @@
 - Aggiornata la policy Domain per ruoli operativi scoped (`capo_area`, `capo_impianto`, `referente_commessa`) senza privilegi cross-tenant.
 - Aggiunto integration test MySQL reale sul ciclo create -> presa in carico -> commento -> richiesta integrazione -> integrazione -> risoluzione -> presa visione -> chiusura.
 - Documentato il workflow in `docs/workflows/SEGNALAZIONI_WORKFLOW.md`.
-- AuditPort e NotificationPort restano deferred; nessun event bus, nessuna modifica a schema DB, migrazioni, auth, sidebar, allegati reali o Comunicazioni backend.
+- In quel passaggio AuditPort e NotificationPort erano ancora deferred; sono stati collegati successivamente ad audit/outbox persistenti in questo stesso aggiornamento del 12 luglio.
 
 ### Core / Segnalazioni — Organizational Scope Resolver
 

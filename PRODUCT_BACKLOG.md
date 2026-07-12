@@ -10,6 +10,7 @@
 | Core Identity | Implementare Core Identity Context backend con adapter legacy e integrazione Segnalazioni | Completato |
 | Core / Segnalazioni | Implementare Organizational Scope Resolver e query appalti/commesse visibili | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
+| Segnalazioni | Collegare AuditPort e NotificationPort a outbox/audit persistente atomico | Completato |
 | Segnalazioni | Implementare workflow operativo reale, commenti, timeline e capability backend | Completato |
 | Segnalazioni | Collegare SegnalatoreApp alle API reali per lista, creazione e dettaglio | Completato |
 | Segnalazioni | Esporre API backend tRPC per creazione, lista e dettaglio con repository persistente | Completato |
@@ -49,11 +50,12 @@
 | Sedi | Completare UI create/edit | Completa CRUD Sedi | Aperto |
 | Lavoratori | Completare UI CRUD e import/export coerenti | Priorità prodotto successiva | Aperto |
 | Segnalazioni | Normalizzare modello Core per impianti e aree operative | Completa il resolver oltre `microclimate_sites` e abilita aree reali | Aperto |
-| Segnalazioni | Collegare AuditPort e NotificationPort a outbox/audit persistente atomico | Completa tracciabilita' globale e notifiche reali | Aperto |
 | Segnalazioni | Implementare allegati reali e allegati commento | Completa il flusso operativo multimediale | Aperto |
 | Core Domain | Migrare gli adapter legacy identity verso tabelle Core dedicate persons/memberships/role_assignments/tenants | Necessario per superare il boundary temporaneo basato su schema legacy | Aperto |
 | Sicurezza | Definire matrice RBAC ruolo-permesso basata su Core Domain | Necessario per sostituire gerarchie ruolo hardcoded | Aperto |
-| Architettura | Introdurre outbox/event bus interno per eventi cross-module | Necessario per Audit Log, Notifiche, Scadenze e read model | Aperto |
+| Audit | Esporre query/API/UI admin per `audit_log_entries` e definire retention policy | Completa consultazione compliance del nuovo audit globale | Aperto |
+| Notifiche | Implementare worker outbox con retry/backoff e provider canali | Trasforma outbox persistente in notifiche consegnate | Aperto |
+| Architettura | Estendere outbox/event bus interno agli altri moduli | Necessario per Scadenze, read model e integrazioni cross-module | Aperto |
 | Architettura | Migrare router legacy verso application layer e port per modulo | Riduce accesso diretto alle tabelle e dipendenze implicite | Aperto |
 | Import/Export | Implementare import/export Mansioni, Corsi, Commesse e cataloghi | Chiude gap wizard attuale | Aperto |
 

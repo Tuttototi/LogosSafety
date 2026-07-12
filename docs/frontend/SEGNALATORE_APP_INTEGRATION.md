@@ -128,7 +128,7 @@ La UI gestisce:
 
 - plant usa temporaneamente i dati reali di `microclimate_sites`;
 - aree operative non ancora disponibili nello schema attuale;
-- AuditPort e NotificationPort restano deferred, senza outbox persistente;
+- AuditPort e NotificationPort sono ora collegati lato backend a Audit Log persistente e Notification Outbox; la UI non espone ancora notifiche o audit admin;
 - allegati reali non disponibili;
 - Comunicazioni Sicurezza non hanno ancora backend;
 - il runtime locale richiede che il Core Identity Context risolva un worker/persona collegato all'utente autenticato;

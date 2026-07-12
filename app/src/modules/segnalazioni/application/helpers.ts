@@ -150,6 +150,8 @@ export function makeEvent(
     tenantId: segnalazione.tenantId,
     companyId: segnalazione.companyId,
     userId: actor.userId,
+    actorPersonId: actor.personId,
+    actorRole: actor.role,
     entityType: "Segnalazione",
     entityId: segnalazione.id,
     timestamp,
@@ -191,4 +193,3 @@ export async function persistStatusChange(
 
   return ok(transitionResult.data);
 }
-

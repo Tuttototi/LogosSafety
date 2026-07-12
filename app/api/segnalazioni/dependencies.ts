@@ -11,11 +11,8 @@ import {
   createResolveSegnalazioneUseCase,
   createTakeInChargeSegnalazioneUseCase,
   type AcknowledgementRecord,
-  type ApplicationEvent,
-  type AuditPort,
   type ClockPort,
   type IdGeneratorPort,
-  type NotificationPort,
   type AcknowledgeSegnalazioneInput,
   type SegnalazioneActionInput,
   type SegnalazioniUseCaseDependencies,
@@ -24,6 +21,15 @@ import {
   DrizzleSegnalazioniRepository,
   type SegnalazioniDrizzleDatabase,
 } from "@/modules/segnalazioni/infrastructure/persistence";
+import {
+  DrizzleAuditLogRepository,
+  SegnalazioniAuditPort,
+} from "@/modules/audit";
+import {
+  DrizzleNotificationOutboxRepository,
+  SegnalazioniNotificationOutboxPort,
+} from "@/modules/notifications";
+import { DrizzleTransactionCoordinator } from "@/modules/shared/infrastructure/drizzle/TransactionContext";
 import { getDb } from "../queries/connection";
 import type { TrpcContext } from "../context";
 
@@ -41,20 +47,6 @@ class CryptoIdGenerator implements IdGeneratorPort {
   nextCode(prefix = "SEG"): string {
     const year = new Date().getUTCFullYear();
     return `${prefix}-${year}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-  }
-}
-
-class DeferredAuditPort implements AuditPort {
-  async record(event: ApplicationEvent): Promise<void> {
-    void event;
-    // Temporary API boundary: persistent audit wiring will be added with the module audit/outbox sprint.
-  }
-}
-
-class DeferredNotificationPort implements NotificationPort {
-  async notify(event: ApplicationEvent): Promise<void> {
-    void event;
-    // Temporary API boundary: notification dispatch will be added when Notifiche consumes module events.
   }
 }
 
@@ -76,29 +68,53 @@ export interface SegnalazioniApiDependencies {
 
 export type SegnalazioniDependencyFactory = (ctx: TrpcContext) => SegnalazioniApiDependencies;
 
+type UseCase<TInput, TOutput> = (input: TInput) => Promise<TOutput>;
+
+function transactional<TInput, TOutput>(
+  coordinator: DrizzleTransactionCoordinator,
+  ids: IdGeneratorPort,
+  useCase: UseCase<TInput, TOutput>,
+): UseCase<TInput, TOutput> {
+  return async (input: TInput) =>
+    coordinator.run(ids.nextId("correlation"), () => useCase(input));
+}
+
 export function createSegnalazioniDependencies(): SegnalazioniApiDependencies {
   const db = getDb() as unknown as SegnalazioniDrizzleDatabase;
+  const ids = new CryptoIdGenerator();
   const repository = new DrizzleSegnalazioniRepository(db);
+  const auditRepository = new DrizzleAuditLogRepository(db);
+  const notificationOutboxRepository = new DrizzleNotificationOutboxRepository(db);
+  const coordinator = new DrizzleTransactionCoordinator(db);
   const deps: SegnalazioniUseCaseDependencies = {
     repository,
-    audit: new DeferredAuditPort(),
-    notification: new DeferredNotificationPort(),
+    audit: new SegnalazioniAuditPort(auditRepository, ids),
+    notification: new SegnalazioniNotificationOutboxPort(notificationOutboxRepository, ids),
     clock: new SystemClock(),
-    ids: new CryptoIdGenerator(),
+    ids,
   };
+  const createSegnalazione = createCreateSegnalazioneUseCase(deps);
+  const addComment = createAddCommentUseCase(deps);
+  const requestIntegration = createRequestIntegrationUseCase(deps);
+  const integrateSegnalazione = createIntegrateSegnalazioneUseCase(deps);
+  const takeInChargeSegnalazione = createTakeInChargeSegnalazioneUseCase(deps);
+  const changeSegnalazioneStatus = createChangeSegnalazioneStatusUseCase(deps);
+  const resolveSegnalazione = createResolveSegnalazioneUseCase(deps);
+  const closeSegnalazione = createCloseSegnalazioneUseCase(deps);
+  const acknowledgeSegnalazione = createAcknowledgeSegnalazioneUseCase(deps);
 
   return {
-    createSegnalazione: createCreateSegnalazioneUseCase(deps),
+    createSegnalazione: transactional(coordinator, ids, createSegnalazione),
     listVisibleSegnalazioni: createListVisibleSegnalazioniUseCase(deps),
     getSegnalazioneById: createGetSegnalazioneByIdUseCase(deps),
-    addComment: createAddCommentUseCase(deps),
-    requestIntegration: createRequestIntegrationUseCase(deps),
-    integrateSegnalazione: createIntegrateSegnalazioneUseCase(deps),
-    takeInChargeSegnalazione: createTakeInChargeSegnalazioneUseCase(deps),
-    changeSegnalazioneStatus: createChangeSegnalazioneStatusUseCase(deps),
-    resolveSegnalazione: createResolveSegnalazioneUseCase(deps),
-    closeSegnalazione: createCloseSegnalazioneUseCase(deps),
-    acknowledgeSegnalazione: createAcknowledgeSegnalazioneUseCase(deps),
+    addComment: transactional(coordinator, ids, addComment),
+    requestIntegration: transactional(coordinator, ids, requestIntegration),
+    integrateSegnalazione: transactional(coordinator, ids, integrateSegnalazione),
+    takeInChargeSegnalazione: transactional(coordinator, ids, takeInChargeSegnalazione),
+    changeSegnalazioneStatus: transactional(coordinator, ids, changeSegnalazioneStatus),
+    resolveSegnalazione: transactional(coordinator, ids, resolveSegnalazione),
+    closeSegnalazione: transactional(coordinator, ids, closeSegnalazione),
+    acknowledgeSegnalazione: transactional(coordinator, ids, acknowledgeSegnalazione),
     hasAcknowledgement: async (input: AcknowledgeSegnalazioneInput) =>
       repository.hasAcknowledgement(input.id, input.actor.userId, input.actor.tenantId),
     listAcknowledgements: async (input: SegnalazioneActionInput) =>

@@ -8,6 +8,21 @@
 
 ## Aggiornamento operativo — 12 luglio 2026
 
+Implementati Audit Log persistente e Notification Outbox per Segnalazioni:
+
+- aggiunte tabelle `audit_log_entries` e `notification_outbox` con indici tenant/correlation/status/entity;
+- generata e applicata su MySQL locale Docker la migration `0003_volatile_human_cannonball.sql`;
+- sostituiti gli adapter deferred con `SegnalazioniAuditPort` e `SegnalazioniNotificationOutboxPort`;
+- aggiunto `DrizzleTransactionCoordinator` con contesto Drizzle condiviso tra repository Segnalazioni, Audit e Outbox;
+- garantito rollback reale se fallisce audit o outbox durante mutation Segnalazioni;
+- introdotta sanitizzazione metadata audit, evitando testo completo commenti/note/risoluzioni e dati sensibili;
+- definita matrice notificabile: create, presa in carico, commento, richiesta integrazione, integrazione, risoluzione e chiusura;
+- confermato che `acknowledge` crea audit ma non outbox e resta idempotente senza duplicati;
+- aggiunti test unitari e integration test MySQL reale con cleanup mirato e verifica correlationId;
+- documentati ADR-0002, Audit Log, Notification Outbox e test transazionali.
+
+Limiti residui: non esistono ancora worker outbox, provider email/SMS/push/WhatsApp, UI admin per `audit_log_entries`, retention policy audit o migrazione del router Audit legacy dalla tabella `audit_logs`.
+
 Implementato il workflow operativo reale Segnalazioni:
 
 - collegate alle API tRPC le procedure operative per commenti, presa in carico, richiesta integrazione, integrazione, cambio stato, risoluzione, chiusura e presa visione;
@@ -18,7 +33,7 @@ Implementato il workflow operativo reale Segnalazioni:
 - aggiunto integration test MySQL reale su ciclo operativo completo con verifica record commenti, workflow events e acknowledgement;
 - documentato il workflow in `docs/workflows/SEGNALAZIONI_WORKFLOW.md`.
 
-Limiti residui: AuditPort e NotificationPort sono ancora deferred, non esiste outbox/event bus, gli allegati reali restano fuori scope e lo schema storico workflow non conserva sempre il ruolo dell'attore.
+Limiti residui: allegati reali restano fuori scope, non esiste worker outbox e lo schema storico workflow non conserva sempre il ruolo dell'attore.
 
 Implementato l'Organizational Scope Resolver per Segnalazioni:
 

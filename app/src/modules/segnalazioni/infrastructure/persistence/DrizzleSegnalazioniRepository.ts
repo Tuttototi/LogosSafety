@@ -16,6 +16,10 @@ import {
   type DomainId,
   type Segnalazione,
 } from "../../domain";
+import {
+  getActiveDrizzleDatabase,
+  hasActiveDrizzleTransaction,
+} from "@/modules/shared/infrastructure/drizzle/TransactionContext";
 import type {
   AcknowledgementRecord,
   ListVisibleByScopeContext,
@@ -121,11 +125,25 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
     this.db = db;
   }
 
+  private currentDb(): SegnalazioniDrizzleDatabase {
+    return getActiveDrizzleDatabase(this.db) as SegnalazioniDrizzleDatabase;
+  }
+
+  private async runMutation<T>(
+    operation: (db: SegnalazioniDrizzleDatabase) => Promise<T>,
+  ): Promise<T> {
+    if (hasActiveDrizzleTransaction()) {
+      return operation(this.currentDb());
+    }
+
+    return this.db.transaction(async (tx) => operation(tx as unknown as SegnalazioniDrizzleDatabase));
+  }
+
   async findById(id: DomainId, tenantId?: DomainId): Promise<Segnalazione | null> {
     const filters: SQL[] = [eq(segnalazioni.id, id), isNull(segnalazioni.deletedAt)];
     if (tenantId) filters.push(eq(segnalazioni.tenantId, tenantId));
 
-    const rows = await this.db
+    const rows = await this.currentDb()
       .select()
       .from(segnalazioni)
       .where(whereAll(filters))
@@ -139,7 +157,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
   }
 
   async listVisibleByScope(context: ListVisibleByScopeContext): Promise<Segnalazione[]> {
-    const rows = await this.db
+    const rows = await this.currentDb()
       .select()
       .from(segnalazioni)
       .where(whereAll(buildSegnalazioniListFilters(context)))
@@ -150,19 +168,19 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
   }
 
   async create(segnalazione: Segnalazione): Promise<void> {
-    await this.db.transaction(async (tx) => {
-      await tx.insert(segnalazioni).values(mapSegnalazioneToInsert(segnalazione));
+    await this.runMutation(async (db) => {
+      await db.insert(segnalazioni).values(mapSegnalazioneToInsert(segnalazione));
 
       const attachments = segnalazione.attachments ?? [];
       if (attachments.length > 0) {
-        await tx.insert(segnalazioneAttachments).values(
+        await db.insert(segnalazioneAttachments).values(
           attachments.map((attachment) => mapAttachmentToInsert(attachment, segnalazione)),
         );
       }
 
       const comments = segnalazione.comments ?? [];
       if (comments.length > 0) {
-        await tx.insert(segnalazioneComments).values(
+        await db.insert(segnalazioneComments).values(
           comments.map((comment) => mapCommentToInsert(comment, segnalazione)),
         );
 
@@ -173,13 +191,13 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
         );
 
         if (commentAttachments.length > 0) {
-          await tx.insert(segnalazioneAttachments).values(commentAttachments);
+          await db.insert(segnalazioneAttachments).values(commentAttachments);
         }
       }
 
       const workflow = segnalazione.workflow ?? [];
       if (workflow.length > 0) {
-        await tx.insert(segnalazioneWorkflowEvents).values(
+        await db.insert(segnalazioneWorkflowEvents).values(
           workflow.map((event) => mapWorkflowEventToInsert(event, segnalazione)),
         );
       }
@@ -187,8 +205,8 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
   }
 
   async update(segnalazione: Segnalazione): Promise<void> {
-    await this.db.transaction(async (tx) => {
-      await tx
+    await this.runMutation(async (db) => {
+      await db
         .update(segnalazioni)
         .set(mapSegnalazioneToUpdate(segnalazione))
         .where(
@@ -203,7 +221,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
       if (workflow.length === 0) return;
 
       const workflowIds = workflow.map((event) => event.id);
-      const existingEvents = await tx
+      const existingEvents = await db
         .select({ id: segnalazioneWorkflowEvents.id })
         .from(segnalazioneWorkflowEvents)
         .where(inArray(segnalazioneWorkflowEvents.id, workflowIds));
@@ -211,7 +229,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
       const newEvents = workflow.filter((event) => !existingEventIds.has(event.id));
 
       if (newEvents.length > 0) {
-        await tx.insert(segnalazioneWorkflowEvents).values(
+        await db.insert(segnalazioneWorkflowEvents).values(
           newEvents.map((event) => mapWorkflowEventToInsert(event, segnalazione)),
         );
       }
@@ -226,12 +244,12 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
       });
     }
 
-    await this.db.transaction(async (tx) => {
-      await tx.insert(segnalazioneComments).values(mapCommentToInsert(comment, segnalazione));
+    await this.runMutation(async (db) => {
+      await db.insert(segnalazioneComments).values(mapCommentToInsert(comment, segnalazione));
 
       const attachments = comment.allegati ?? [];
       if (attachments.length > 0) {
-        await tx.insert(segnalazioneAttachments).values(
+        await db.insert(segnalazioneAttachments).values(
           attachments.map((attachment) => mapAttachmentToInsert(attachment, segnalazione, comment.id)),
         );
       }
@@ -239,7 +257,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
   }
 
   async saveAcknowledgement(acknowledgement: AcknowledgementRecord): Promise<void> {
-    await this.db
+    await this.currentDb()
       .insert(segnalazioneAcknowledgements)
       .values(mapAcknowledgementToInsert(acknowledgement));
   }
@@ -255,7 +273,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
     ];
     if (tenantId) filters.push(eq(segnalazioneAcknowledgements.tenantId, tenantId));
 
-    const rows = await this.db
+    const rows = await this.currentDb()
       .select()
       .from(segnalazioneAcknowledgements)
       .where(whereAll(filters))
@@ -274,7 +292,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
     ];
     if (tenantId) filters.push(eq(segnalazioneAcknowledgements.tenantId, tenantId));
 
-    const rows = await this.db
+    const rows = await this.currentDb()
       .select()
       .from(segnalazioneAcknowledgements)
       .where(whereAll(filters))
@@ -295,7 +313,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
     const filters: SQL[] = [eq(segnalazioni.code, code), isNull(segnalazioni.deletedAt)];
     if (tenantId) filters.push(eq(segnalazioni.tenantId, tenantId));
 
-    const rows = await this.db
+    const rows = await this.currentDb()
       .select({ id: segnalazioni.id })
       .from(segnalazioni)
       .where(whereAll(filters))
@@ -309,7 +327,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
     if (reportIds.length === 0) return [];
 
     const [commentRows, attachmentRows, workflowRows] = await Promise.all([
-      this.db
+      this.currentDb()
         .select()
         .from(segnalazioneComments)
         .where(
@@ -319,7 +337,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
           ),
         )
         .orderBy(asc(segnalazioneComments.createdAt)),
-      this.db
+      this.currentDb()
         .select()
         .from(segnalazioneAttachments)
         .where(
@@ -329,7 +347,7 @@ export class DrizzleSegnalazioniRepository implements SegnalazioniRepository {
           ),
         )
         .orderBy(asc(segnalazioneAttachments.createdAt)),
-      this.db
+      this.currentDb()
         .select()
         .from(segnalazioneWorkflowEvents)
         .where(inArray(segnalazioneWorkflowEvents.segnalazioneId, reportIds))

@@ -38,9 +38,12 @@ export interface ApplicationEvent {
   tenantId: string;
   companyId: string;
   userId: DomainId;
+  actorPersonId?: DomainId;
+  actorRole?: string;
   entityType: "Segnalazione" | "Commento" | "Acknowledgement";
   entityId: DomainId;
   timestamp: ISODateTimeString;
+  correlationId?: DomainId;
   metadata?: Record<string, unknown>;
 }
 

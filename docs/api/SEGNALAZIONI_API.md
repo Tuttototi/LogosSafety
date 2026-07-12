@@ -137,6 +137,7 @@ Comportamento:
 - genera id e codice lato server;
 - usa `createCreateSegnalazioneUseCase`;
 - persiste tramite `DrizzleSegnalazioniRepository`.
+- persiste audit e outbox notifiche nella stessa transazione applicativa.
 
 ### `segnalazioni.list`
 
@@ -216,6 +217,7 @@ Tutte le procedure sono protette e costruiscono l'attore da backend:
 | `acknowledge` | `{ id }` | presa visione idempotente lato UX |
 
 Il client non puo' inviare autore, tenant, company, ruolo, previous status, force o override.
+Il client non invia correlationId: il backend lo genera per ogni mutation e lo usa solo per tracciamento tecnico audit/outbox.
 
 Il dettaglio espone capability:
 
@@ -269,10 +271,11 @@ La suite `segnalazioni-router.test.ts` verifica:
 - mapping validation/conflict;
 - sanitizzazione errori inattesi.
 
-La validazione reale del repository MySQL resta coperta da:
+La validazione reale del repository MySQL e dell'infrastruttura audit/outbox resta coperta da:
 
 - `segnalazioni-persistence.integration.test.ts`;
-- `core-organizational-scope.integration.test.ts`.
+- `core-organizational-scope.integration.test.ts`;
+- `audit-notification-outbox.integration.test.ts`.
 
 ## Integrazione frontend
 
@@ -305,6 +308,7 @@ La `list` senza filtro `organizationalScope` esplicito non viene ristretta al pr
 - manca una tabella tenant SaaS dedicata;
 - plant usa temporaneamente `microclimate_sites`, non una tabella Core dedicata;
 - aree operative non ancora disponibili nello schema attuale;
-- audit e notifiche sono port differiti, non ancora collegati a outbox o audit persistente atomico;
-- allegati, commenti, prese visione e transizioni workflow avanzate non sono esposti da questo sprint;
-- Comunicazioni Sicurezza non sono ancora collegate a backend.
+- allegati reali e allegati commento non sono ancora esposti da questo sprint;
+- Comunicazioni Sicurezza non sono ancora collegate a backend;
+- non esiste ancora worker outbox o provider di invio notifiche;
+- il router Audit legacy legge ancora `audit_logs`, non la nuova tabella `audit_log_entries`.
