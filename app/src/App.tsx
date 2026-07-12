@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router";
+import { Navigate, Routes, Route } from "react-router";
 import AppLayout from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Dipendenti from "@/pages/Dipendenti";
@@ -15,120 +15,168 @@ import Login from "@/pages/Login";
 import Segnalazioni from "@/pages/Segnalazioni";
 import { SegnalatoreApp } from "@/components/reports/SegnalatoreApp/index";
 import NotFound from "@/pages/NotFound";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  getProtectedRouteDecision,
+  getPublicRouteDecision,
+} from "@/lib/auth-routing";
 
 function LayoutWrapper({ children }: Readonly<{ children: React.ReactNode }>) {
   return <AppLayout>{children}</AppLayout>;
 }
 
+function AuthLoadingScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600 shadow-sm">
+        Caricamento sessione...
+      </div>
+    </div>
+  );
+}
+
+function ProtectedRoute({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const decision = getProtectedRouteDecision({ isAuthenticated, isLoading });
+
+  if (decision.state === "loading") {
+    return <AuthLoadingScreen />;
+  }
+
+  if (decision.state === "redirect") {
+    return <Navigate to={decision.to} replace />;
+  }
+
+  return <LayoutWrapper>{children}</LayoutWrapper>;
+}
+
+function PublicRoute({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { isLoading, user } = useAuth();
+  const decision = getPublicRouteDecision({
+    isLoading,
+    role: user?.role,
+  });
+
+  if (decision.state === "loading") {
+    return <AuthLoadingScreen />;
+  }
+
+  if (decision.state === "redirect") {
+    return <Navigate to={decision.to} replace />;
+  }
+
+  return children;
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route
         path="/"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Dashboard />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/dipendenti"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Dipendenti />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/formazione"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Formazione />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/sorveglianza"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Sorveglianza />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/mansioni"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Mansioni />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/scadenziario"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Scadenziario />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/segnalazioni"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Segnalazioni />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/segnalazioni/app"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <SegnalatoreApp variant="page" />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/documenti"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Documenti />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/impostazioni"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Impostazioni />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/audit"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <AuditLog />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/import-export"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <ImportExport />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
       <Route
         path="/microclima"
         element={
-          <LayoutWrapper>
+          <ProtectedRoute>
             <Microclima />
-          </LayoutWrapper>
+          </ProtectedRoute>
         }
       />
-      <Route path="*" element={<NotFound />} />
+      <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
     </Routes>
   );
 }

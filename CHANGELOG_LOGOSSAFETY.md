@@ -2,6 +2,14 @@
 
 ## 12 luglio 2026
 
+### Auth — guard login e logout UAT
+
+- Aggiunta guard unica React per proteggere tutte le route applicative e lasciare pubblica solo `/login`.
+- Corretto il logout con svuotamento cache client e redirect sostitutivo a `/login`.
+- Corretto il DEV login UAT con redirect per ruolo: Admin verso `/segnalazioni`, Segnalatore verso `/segnalazioni/app`.
+- Aggiunto fallback dev-only per usare `DATABASE_URL` quando `DEV_DATABASE_URL` locale punta allo stesso database ma non include credenziali complete.
+- Sostituita l'icona provvisoria della pagina login con il logo reale `/assets/LogoLogos.png`.
+
 ### Segnalazioni — utenti UAT locali
 
 - Aggiunta fixture locale idempotente per creare Admin UAT e Segnalatore UAT collegati a Core Identity.

@@ -15,6 +15,7 @@ import {
   getUatIdentity,
   seedSegnalazioniUatUsers,
 } from "../dev/segnalazioni-uat-users";
+import { getDevLoginRedirectHash } from "@/lib/auth-routing";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -155,23 +156,40 @@ export function createOAuthCallbackHandler() {
   };
 }
 
-export function createDevLoginHandler() {
+type DevLoginEnvironment = Pick<
+  typeof env,
+  "appId" | "databaseUrl" | "devAuthEnabled" | "isProduction"
+>;
+
+type DevLoginHandlerDependencies = {
+  authEnv?: DevLoginEnvironment;
+  seedUatUsers?: (options: { databaseUrl?: string }) => Promise<unknown>;
+  signToken?: typeof signSessionToken;
+};
+
+export function createDevLoginHandler(
+  dependencies: DevLoginHandlerDependencies = {},
+) {
   return async (c: Context) => {
-    if (!env.devAuthEnabled || env.isProduction) {
+    const currentEnv = dependencies.authEnv ?? env;
+    const seedUatUsers = dependencies.seedUatUsers ?? seedSegnalazioniUatUsers;
+    const signToken = dependencies.signToken ?? signSessionToken;
+
+    if (!currentEnv.devAuthEnabled || currentEnv.isProduction) {
       return c.json({ error: "Not available in production" }, 404);
     }
 
     try {
       assertDevIdentitySelectionAllowed({
-        devAuthEnabled: env.devAuthEnabled,
-        isProduction: env.isProduction,
+        devAuthEnabled: currentEnv.devAuthEnabled,
+        isProduction: currentEnv.isProduction,
       });
       const identity = getUatIdentity(c.req.query("identity"));
-      await seedSegnalazioniUatUsers({ databaseUrl: env.databaseUrl });
+      await seedUatUsers({ databaseUrl: currentEnv.databaseUrl });
 
-      const token = await signSessionToken({
+      const token = await signToken({
         unionId: identity.unionId,
-        clientId: env.appId || "dev",
+        clientId: currentEnv.appId || "dev",
       });
 
       const cookieOpts = getSessionCookieOptions(c.req.raw.headers);
@@ -181,7 +199,7 @@ export function createDevLoginHandler() {
       });
       clearLegacySessionCookies(c, cookieOpts);
 
-      return c.redirect("/", 302);
+      return c.redirect(getDevLoginRedirectHash(identity.role), 302);
     } catch (error) {
       console.error("[DEV auth] Login failed", error);
       return c.json({ error: "DEV login fixture unavailable" }, 500);

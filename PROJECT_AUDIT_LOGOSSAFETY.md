@@ -8,6 +8,18 @@
 
 ## Aggiornamento operativo — 12 luglio 2026
 
+Corretto flusso autenticazione locale e UAT:
+
+- introdotta guard React unica sulle route protette con redirect a `/login`;
+- mantenuta pubblica solo la route `/login`;
+- evitata visualizzazione di contenuti protetti durante il caricamento `auth.me`;
+- corretto logout con scadenza cookie server-side, pulizia cache client e redirect sostitutivo a `/login`;
+- corretto redirect DEV UAT per ruolo: Admin su `/segnalazioni`, Segnalatore su `/segnalazioni/app`;
+- gestito fallback dev-only della URL database locale quando `DEV_DATABASE_URL` incompleta punta allo stesso database di `DATABASE_URL`;
+- aggiornato branding pagina login con `/assets/LogoLogos.png`.
+
+Limiti residui: il fallback database e gli endpoint DEV restano confinati a non-production; la route pubblica documentata e' solo `/login`.
+
 Creati utenti UAT locali per collaudo Segnalazioni:
 
 - aggiunta fixture idempotente `npm run uat:seed:segnalazioni`;

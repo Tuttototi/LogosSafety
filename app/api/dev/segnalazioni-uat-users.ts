@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import { selectDatabaseUrlForEnvironment } from "../lib/env";
 
 export type UatIdentityKey = "admin" | "segnalatore";
 
@@ -92,7 +93,7 @@ function roleEnumSql(): string {
 }
 
 export function getUatDatabaseUrl(env: EnvLike = process.env as EnvLike): string {
-  return (env.DEV_DATABASE_URL || env.DATABASE_URL || "").trim();
+  return selectDatabaseUrlForEnvironment(env).trim();
 }
 
 export function assertLocalUatDatabaseUrl(databaseUrl: string): URL {

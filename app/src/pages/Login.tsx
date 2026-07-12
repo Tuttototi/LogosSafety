@@ -27,13 +27,19 @@ export default function Login() {
       <div className="w-full max-w-5xl overflow-hidden rounded-[32px] border border-red-100 bg-white shadow-[0_25px_80px_rgba(0,0,0,0.12)]">
         <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
           <div className="bg-[#b91c1c] px-8 py-10 sm:px-10 lg:px-12 lg:py-14 text-white">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-              <ShieldCheck className="h-6 w-6" />
+            <div className="flex justify-center">
+              <div className="flex h-16 w-52 items-center justify-center rounded-2xl bg-white px-4 shadow-sm">
+                <img
+                  src="/assets/LogoLogos.png"
+                  alt="Logos"
+                  className="max-h-11 w-full object-contain"
+                />
+              </div>
             </div>
-            <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 className="mt-6 text-center text-3xl font-semibold tracking-tight sm:text-4xl lg:text-left">
               Accesso a Logos Safety
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-red-50 sm:text-base">
+            <p className="mt-3 max-w-xl text-center text-sm leading-6 text-red-50 sm:text-base lg:text-left">
               Gestisci sicurezza, conformità e attività operative da un unico punto di accesso.
             </p>
 

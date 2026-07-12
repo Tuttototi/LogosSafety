@@ -58,7 +58,11 @@ Per gli impianti usa `microclimate_sites` solo come sorgente dello scope operati
 
 ## Login DEV
 
-Aprire `/login` in ambiente dev.
+Aprire `/login` in ambiente dev. Con HashRouter l'URL completo e':
+
+```text
+http://localhost:3000/#/login
+```
 
 Sono disponibili due pulsanti:
 
@@ -71,6 +75,25 @@ Endpoint diretti:
 - `/api/dev/login?identity=segnalatore`.
 
 La selezione identita' DEV e' disponibile solo se `DEV_AUTH_ENABLED=true` e non in produzione.
+
+Redirect attesi:
+
+- Admin UAT: `/#/segnalazioni`;
+- Segnalatore UAT: `/#/segnalazioni/app`.
+
+La sola route pubblica della SPA e' `/login`. Ogni route protetta senza sessione valida deve tornare a `/login` senza mostrare dati applicativi durante il caricamento auth.
+
+## Logout
+
+Il logout deve essere usato prima di cambiare identita' UAT.
+
+Comportamento atteso:
+
+- chiama `auth.logout`;
+- scade il cookie di sessione corrente e i cookie legacy;
+- svuota la cache client auth/tRPC;
+- reindirizza a `/#/login`;
+- dopo refresh non ripristina l'utente precedente.
 
 ## Cambio Utente
 
@@ -110,4 +133,3 @@ Non cancellare automaticamente la segnalazione UAT finale: deve restare disponib
 - Gli allegati reali restano disabilitati fino allo storage sicuro.
 - Il seed aggiorna localmente l'enum `users.role` solo se il database locale non accetta ancora i ruoli Core necessari.
 - Nessuna identita' UAT imposta `canAccessAllTenants=true`.
-

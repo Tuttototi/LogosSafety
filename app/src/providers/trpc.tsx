@@ -23,6 +23,10 @@ const trpcClient = trpc.createClient({
   ],
 });
 
+export function clearTrpcQueryCache() {
+  queryClient.clear();
+}
+
 export function TRPCProvider({ children }: { children: ReactNode }) {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
