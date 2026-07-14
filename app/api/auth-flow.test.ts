@@ -133,7 +133,7 @@ describe("auth flow", () => {
     const response = await app.request("http://localhost/api/dev/login");
 
     expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toBe("/#/segnalazioni");
+    expect(response.headers.get("location")).toBe("/#/");
     expect(response.headers.get("set-cookie")).toContain(`${Session.cookieName}=admin-token`);
     expect(issuedTokens).toEqual([{
       unionId: "local:safety.genoma@log6s.it",
@@ -179,7 +179,7 @@ describe("auth flow", () => {
     const response = await app.request("http://localhost/api/dev/login?identity=segnalatore&role=superuser");
 
     expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toBe("/#/segnalazioni");
+    expect(response.headers.get("location")).toBe("/#/");
     expect(issuedTokens).toEqual([{
       unionId: "local:safety.genoma@log6s.it",
       clientId: "logos-safety-test",

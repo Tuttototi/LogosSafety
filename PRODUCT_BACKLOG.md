@@ -11,6 +11,7 @@
 | Core / Segnalazioni | Implementare Organizational Scope Resolver e query appalti/commesse visibili | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
 | Admin / Identity | Implementare Anagrafiche e Utenti con admin reale, persone, account, ruoli e scope | Completato |
+| Admin / Identity | Allineare redirect post-login e ruoli assegnabili in gestione utenti | Completato |
 | Auth / Segnalazioni | Rendere funzionante il DEV login UAT con configurazione DB locale normale | Completato |
 | Auth / Segnalazioni | Correggere guard route protette, logout e login UAT locale | Completato |
 | Segnalazioni | Creare utenti UAT locali Admin e Segnalatore con login DEV e Core Identity | Completato |

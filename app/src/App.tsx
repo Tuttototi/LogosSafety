@@ -36,7 +36,10 @@ function AuthLoadingScreen() {
   );
 }
 
-function ProtectedRoute({ children }: Readonly<{ children: React.ReactNode }>) {
+function ProtectedRoute({
+  children,
+  withLayout = true,
+}: Readonly<{ children: React.ReactNode; withLayout?: boolean }>) {
   const { isAuthenticated, isLoading } = useAuth();
   const decision = getProtectedRouteDecision({ isAuthenticated, isLoading });
 
@@ -46,6 +49,10 @@ function ProtectedRoute({ children }: Readonly<{ children: React.ReactNode }>) {
 
   if (decision.state === "redirect") {
     return <Navigate to={decision.to} replace />;
+  }
+
+  if (!withLayout) {
+    return children;
   }
 
   return <LayoutWrapper>{children}</LayoutWrapper>;
@@ -140,7 +147,7 @@ export default function App() {
       <Route
         path="/segnalazioni/app"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute withLayout={false}>
             <SegnalatoreApp variant="page" />
           </ProtectedRoute>
         }

@@ -21,12 +21,28 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import type { Role as CoreRole } from "@/modules/core/domain";
 import { trpc } from "@/providers/trpc";
 import { ShieldAlert, UserPlus, UsersRound } from "lucide-react";
 
 type BooleanFilter = "all" | "true" | "false";
-type AdminRole = CoreRole;
+const ADMIN_ROLE_VALUES = [
+  "admin",
+  "rspp",
+  "aspp",
+  "responsabile_sicurezza",
+  "operatore_sicurezza",
+  "capo_area",
+  "capo_impianto",
+  "referente_commessa",
+  "operatore",
+  "dipendente",
+  "segnalatore",
+] as const;
+type AdminRole = (typeof ADMIN_ROLE_VALUES)[number];
+
+function isAdminRole(value: string | null | undefined): value is AdminRole {
+  return ADMIN_ROLE_VALUES.includes(value as AdminRole);
+}
 
 type PersonFormState = {
   firstName: string;
@@ -234,7 +250,7 @@ export default function AnagraficheUtenti() {
     if (!selected) return;
     enableAccountMutation.mutate({
       personId: selected.id,
-      role: selected.account?.role ?? form.accountRole,
+      role: isAdminRole(selected.account?.role) ? selected.account.role : form.accountRole,
       active: true,
       scope: {
         companyId: selected.companyId,
@@ -245,8 +261,8 @@ export default function AnagraficheUtenti() {
   }
 
   function updateSelectedRole(role: string) {
-    if (!selected?.account) return;
-    assignRoleMutation.mutate({ personId: selected.id, role: role as AdminRole });
+    if (!selected?.account || !isAdminRole(role)) return;
+    assignRoleMutation.mutate({ personId: selected.id, role });
   }
 
   function updateSelectedScope() {

@@ -1,5 +1,14 @@
 # Changelog LogosSafety
 
+## 14 luglio 2026
+
+### Admin — redirect e ruoli assegnabili
+
+- Allineato il redirect post-login: solo `segnalatore` entra in `/#/segnalazioni/app`, tutti gli altri ruoli entrano in `/#/`.
+- Resa la route `/segnalazioni/app` protetta ma senza `AppLayout`, quindi senza sidebar.
+- Limitati i ruoli assegnabili in Anagrafiche e Utenti agli 11 ruoli operativi richiesti.
+- Mantenuta la validazione backend con schema Zod chiuso e autorizzazione Admin sulle mutation di ruolo.
+
 ## 12 luglio 2026
 
 ### Admin — Anagrafiche e Utenti reali

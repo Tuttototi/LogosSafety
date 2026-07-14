@@ -46,7 +46,7 @@ describe("auth route guard decisions", () => {
     expect(getPublicRouteDecision({
       isLoading: false,
       role: "admin",
-    })).toEqual({ state: "redirect", to: "/segnalazioni" });
+    })).toEqual({ state: "redirect", to: "/" });
     expect(getPublicRouteDecision({
       isLoading: false,
       role: "segnalatore",
@@ -54,12 +54,18 @@ describe("auth route guard decisions", () => {
   });
 
   it("builds UAT login redirect hashes without trusting client role data", () => {
-    expect(getPostLoginRedirectPath("admin")).toBe("/segnalazioni");
+    expect(getPostLoginRedirectPath("admin")).toBe("/");
+    expect(getPostLoginRedirectPath("rspp")).toBe("/");
+    expect(getPostLoginRedirectPath("aspp")).toBe("/");
+    expect(getPostLoginRedirectPath("responsabile_sicurezza")).toBe("/");
+    expect(getPostLoginRedirectPath("operatore_sicurezza")).toBe("/");
+    expect(getPostLoginRedirectPath("capo_area")).toBe("/");
+    expect(getPostLoginRedirectPath("capo_impianto")).toBe("/");
+    expect(getPostLoginRedirectPath("referente_commessa")).toBe("/");
+    expect(getPostLoginRedirectPath("operatore")).toBe("/");
+    expect(getPostLoginRedirectPath("dipendente")).toBe("/");
     expect(getPostLoginRedirectPath("segnalatore")).toBe("/segnalazioni/app");
-    expect(getPostLoginRedirectPath("dipendente")).toBe("/segnalazioni/app");
-    expect(getPostLoginRedirectPath("operatore")).toBe("/segnalazioni/app");
-    expect(getPostLoginRedirectPath("capo_impianto")).toBe("/segnalazioni/app");
-    expect(getDevLoginRedirectHash("admin")).toBe("/#/segnalazioni");
+    expect(getDevLoginRedirectHash("admin")).toBe("/#/");
     expect(getDevLoginRedirectHash("segnalatore")).toBe("/#/segnalazioni/app");
   });
 });

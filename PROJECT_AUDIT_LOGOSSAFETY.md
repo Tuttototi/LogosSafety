@@ -6,6 +6,16 @@
 **Commit analizzato:** `be966fa` (`master`)  
 **Metodo:** analisi statica completa del repository, cronologia Git, schema e migration, type-check non scrivente, lint non scrivente, audit dipendenze npm e tentativo di connessione read-only al database configurato.
 
+## Aggiornamento operativo — 14 luglio 2026
+
+Allineato il flusso post-login e la gestione ruoli Admin:
+
+- `segnalatore` viene indirizzato alla Safety App mobile `/#/segnalazioni/app`;
+- tutti gli altri ruoli entrano nel portale completo `/#/`;
+- `/segnalazioni/app` resta protetta ma non monta `AppLayout` e non mostra la sidebar;
+- Anagrafiche e Utenti espone solo gli 11 ruoli assegnabili richiesti;
+- il backend continua a validare ruoli con schema chiuso e a richiedere Admin per assegnazione/modifica ruolo.
+
 ## Aggiornamento operativo — 12 luglio 2026
 
 Implementato il primo flusso amministrativo reale Anagrafiche e Utenti:

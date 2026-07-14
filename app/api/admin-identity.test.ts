@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADMIN_ROLE_OPTIONS,
   assertAdminIdentityRole,
   maskFiscalCode,
   normalizeEmail,
@@ -43,7 +44,26 @@ describe("Admin identity management", () => {
 
   it("rejects arbitrary roles server-side", () => {
     expect(() => assertAdminIdentityRole("segnalatore")).not.toThrow();
+    expect(() => assertAdminIdentityRole("medico_competente")).toThrow("Ruolo non riconosciuto");
+    expect(() => assertAdminIdentityRole("auditor")).toThrow("Ruolo non riconosciuto");
+    expect(() => assertAdminIdentityRole("sola_lettura")).toThrow("Ruolo non riconosciuto");
     expect(() => assertAdminIdentityRole("superuser")).toThrow("Ruolo non riconosciuto");
+  });
+
+  it("exposes exactly the assignable roles requested for identity management", () => {
+    expect(ADMIN_ROLE_OPTIONS).toEqual([
+      { value: "admin", label: "Admin" },
+      { value: "rspp", label: "RSPP" },
+      { value: "aspp", label: "ASPP" },
+      { value: "responsabile_sicurezza", label: "Responsabile Sicurezza" },
+      { value: "operatore_sicurezza", label: "Operatore Sicurezza" },
+      { value: "capo_area", label: "Capo Area" },
+      { value: "capo_impianto", label: "Capo Impianto" },
+      { value: "referente_commessa", label: "Referente Commessa" },
+      { value: "operatore", label: "Operatore" },
+      { value: "dipendente", label: "Dipendente" },
+      { value: "segnalatore", label: "Segnalatore" },
+    ]);
   });
 
   it("blocks bootstrap on production or non-local databases", () => {

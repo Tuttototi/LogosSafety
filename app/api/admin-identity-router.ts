@@ -12,16 +12,29 @@ import {
   users,
   workers,
 } from "@db/schema";
-import { Role, ROLE_VALUES, type Role as CoreRole } from "@/modules/core/domain";
+import { Role, type Role as CoreRole } from "@/modules/core/domain";
 import { createCoreIdentityService } from "./core/identity";
 import { createRouter, authedQuery, logAudit } from "./middleware";
 import { getDb } from "./queries/connection";
 import type { TrpcContext } from "./context";
 
-const ADMIN_ROLE_VALUES = [...ROLE_VALUES] as [CoreRole, ...CoreRole[]];
+const ADMIN_ROLE_VALUES = [
+  Role.Admin,
+  Role.Rspp,
+  Role.Aspp,
+  Role.ResponsabileSicurezza,
+  Role.OperatoreSicurezza,
+  Role.CapoArea,
+  Role.CapoImpianto,
+  Role.ReferenteCommessa,
+  Role.Operatore,
+  Role.Dipendente,
+  Role.Segnalatore,
+] as const satisfies readonly CoreRole[];
 const ROLE_SCHEMA = z.enum(ADMIN_ROLE_VALUES);
+type AdminAssignableRole = z.infer<typeof ROLE_SCHEMA>;
 
-const ROLE_LABELS: Record<CoreRole, string> = {
+const ROLE_LABELS: Record<AdminAssignableRole, string> = {
   [Role.Admin]: "Admin",
   [Role.Rspp]: "RSPP",
   [Role.Aspp]: "ASPP",
@@ -30,13 +43,19 @@ const ROLE_LABELS: Record<CoreRole, string> = {
   [Role.CapoArea]: "Capo Area",
   [Role.CapoImpianto]: "Capo Impianto",
   [Role.ReferenteCommessa]: "Referente Commessa",
-  [Role.Segnalatore]: "Segnalatore",
-  [Role.Dipendente]: "Dipendente",
   [Role.Operatore]: "Operatore",
-  [Role.MedicoCompetente]: "Medico Competente",
-  [Role.Auditor]: "Auditor",
-  [Role.SolaLettura]: "Sola Lettura",
+  [Role.Dipendente]: "Dipendente",
+  [Role.Segnalatore]: "Segnalatore",
 };
+
+export const ADMIN_ROLE_OPTIONS = ADMIN_ROLE_VALUES.map((role) => ({
+  value: role,
+  label: ROLE_LABELS[role],
+}));
+
+function getRoleLabel(role: string): string {
+  return ROLE_LABELS[role as AdminAssignableRole] ?? role;
+}
 
 const listInputSchema = z.object({
   search: z.string().trim().max(120).optional(),
@@ -132,8 +151,8 @@ function omitFiscalCode<T extends { fiscalCode: unknown }>(row: T): Omit<T, "fis
   return safeRow as Omit<T, "fiscalCode">;
 }
 
-export function assertAdminIdentityRole(value: string): asserts value is CoreRole {
-  if (!ROLE_VALUES.includes(value as CoreRole)) {
+export function assertAdminIdentityRole(value: string): asserts value is AdminAssignableRole {
+  if (!ADMIN_ROLE_VALUES.includes(value as AdminAssignableRole)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "Ruolo non riconosciuto dal backend",
@@ -457,7 +476,7 @@ async function makePersonDto(personId: number, actorCompanyId: number) {
       unionId: account.unionId,
       email: account.email,
       role: account.role as CoreRole,
-      roleLabel: ROLE_LABELS[account.role as CoreRole] ?? account.role,
+      roleLabel: getRoleLabel(account.role),
       active: account.active,
       scope: scope ? {
         id: scope.id,
@@ -471,7 +490,7 @@ async function makePersonDto(personId: number, actorCompanyId: number) {
 
 async function enableOrUpdateAccount(
   personId: number,
-  role: CoreRole,
+  role: AdminAssignableRole,
   active: boolean,
   scope: z.infer<typeof scopeInputSchema>,
   actor: { companyId: number; userId: number },
@@ -523,7 +542,7 @@ async function enableOrUpdateAccount(
 export const adminIdentityRouter = createRouter({
   roles: authedQuery.query(async ({ ctx }) => {
     await resolveAdminActor(ctx);
-    return ADMIN_ROLE_VALUES.map((role) => ({ value: role, label: ROLE_LABELS[role] }));
+    return ADMIN_ROLE_OPTIONS;
   }),
 
   options: authedQuery.query(async ({ ctx }) => {
@@ -564,7 +583,7 @@ export const adminIdentityRouter = createRouter({
       contracts: contractRows,
       plants: plantRows,
       jobRoles: jobRoleRows,
-      roles: ADMIN_ROLE_VALUES.map((role) => ({ value: role, label: ROLE_LABELS[role] })),
+      roles: ADMIN_ROLE_OPTIONS,
     };
   }),
 
@@ -632,7 +651,7 @@ export const adminIdentityRouter = createRouter({
           account: account ? {
             id: account.id,
             role: account.role as CoreRole,
-            roleLabel: ROLE_LABELS[account.role as CoreRole] ?? account.role,
+            roleLabel: getRoleLabel(account.role),
             active: account.active,
           } : null,
         };
@@ -716,7 +735,7 @@ export const adminIdentityRouter = createRouter({
         entityName: `${input.firstName.trim()} ${input.lastName.trim()}`,
         module: "anagrafiche_utenti",
         reason: "Account abilitato",
-        newValue: ROLE_LABELS[role],
+        newValue: getRoleLabel(role),
       });
     }
 
@@ -770,7 +789,7 @@ export const adminIdentityRouter = createRouter({
       entityId: accountId,
       module: "anagrafiche_utenti",
       reason: "Account abilitato",
-      newValue: ROLE_LABELS[input.role],
+      newValue: getRoleLabel(input.role),
     });
     return makePersonDto(input.personId, actor.companyId);
   }),
@@ -813,8 +832,8 @@ export const adminIdentityRouter = createRouter({
       fieldName: "role",
       module: "anagrafiche_utenti",
       reason: "Ruolo modificato",
-      oldValue: ROLE_LABELS[account.role as CoreRole] ?? account.role,
-      newValue: ROLE_LABELS[input.role],
+      oldValue: getRoleLabel(account.role),
+      newValue: getRoleLabel(input.role),
     });
     return makePersonDto(input.personId, actor.companyId);
   }),

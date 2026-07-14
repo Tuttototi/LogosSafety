@@ -10,6 +10,11 @@ La pagina **Anagrafiche e Utenti** introduce il primo flusso amministrativo real
 4. ruolo e scope letti dal database;
 5. gestione amministrativa di persone, account, ruoli e perimetri.
 
+Redirect post-login:
+
+- `segnalatore` entra nella Safety App mobile su `/#/segnalazioni/app`;
+- tutti gli altri ruoli entrano nel portale LogosSafety completo su `/#/`.
+
 La pagina e' visibile inizialmente solo al ruolo `admin`.
 
 ## Persona e Account
@@ -58,7 +63,7 @@ Se attiva:
 
 ## Ruoli
 
-I ruoli ammessi sono il set Core attuale:
+I ruoli assegnabili da **Anagrafiche e Utenti** sono un set chiuso:
 
 - `admin`
 - `rspp`
@@ -68,12 +73,9 @@ I ruoli ammessi sono il set Core attuale:
 - `capo_area`
 - `capo_impianto`
 - `referente_commessa`
-- `segnalatore`
-- `dipendente`
 - `operatore`
-- `medico_competente`
-- `auditor`
-- `sola_lettura`
+- `dipendente`
+- `segnalatore`
 
 Le stringhe ruolo arbitrarie vengono respinte lato API.
 
