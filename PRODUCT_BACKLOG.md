@@ -1,6 +1,6 @@
 # Product Backlog LogosSafety
 
-**Ultimo aggiornamento:** 12 luglio 2026
+**Ultimo aggiornamento:** 14 luglio 2026
 
 ## Completato
 
@@ -8,6 +8,7 @@
 |---|---|---|
 | Architettura | Definire Application Context, ownership dati, eventi e confini moduli | Completato |
 | Core Identity | Implementare Core Identity Context backend con adapter legacy e integrazione Segnalazioni | Completato |
+| Sicurezza | Chiudere RBAC menu, route e accessi gestionali per ruolo e permission | Completato |
 | Core / Segnalazioni | Implementare Organizational Scope Resolver e query appalti/commesse visibili | Completato |
 | Core Domain | Definire modello condiviso per tenant, organizzazioni, persone, account, ruoli, permessi e scope | Completato |
 | Admin / Identity | Implementare Anagrafiche e Utenti con admin reale, persone, account, ruoli e scope | Completato |
@@ -41,7 +42,7 @@
 
 | Area | Task | Motivazione | Stato |
 |---|---|---|---|
-| Sicurezza | Completare matrice permessi per modulo e azione | Necessario per least privilege commerciale | Aperto |
+| Sicurezza | Estendere matrice permessi a tutte le azioni legacy residue | Necessario per least privilege commerciale oltre menu/route | Aperto |
 | Sicurezza | Applicare scope azienda/sede/commessa agli endpoint core | Necessario per isolamento dati SaaS | Aperto |
 | Database | Aggiungere vincoli univoci e FK core, inclusi identificativi Aziende | Riduce duplicati e record orfani | Aperto |
 | Import/Export | Rendere gli import atomici con transazioni e rollback batch | Evita import parziali incoerenti | Aperto |

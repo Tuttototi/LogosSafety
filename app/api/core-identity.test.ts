@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { User } from "@db/schema";
-import { Role } from "@/modules/core/domain";
+import { Permission, Role } from "@/modules/core/domain";
 import type { CoreIdentityRepository } from "./core/identity";
 import {
   CoreIdentityErrorCode,
@@ -153,6 +153,9 @@ describe("CoreIdentityService", () => {
     expect(actor.organizationalScope.organizationIds).toEqual(["30"]);
     expect(actor.organizationalScope.siteIds).toEqual(["40"]);
     expect(actor.organizationalScope.contractIds).toEqual(["50"]);
+    expect(actor.permissions).toContain(Permission.DashboardView);
+    expect(actor.permissions).toContain(Permission.AdminIdentityManageOperational);
+    expect(actor.permissions).not.toContain(Permission.SettingsManage);
   });
 
   it("blocks unauthenticated resolution", async () => {
@@ -237,6 +240,20 @@ describe("CoreIdentityService", () => {
     expect(actor.organizationalScope.allSites).toBe(true);
     expect(actor.organizationalScope.allContracts).toBe(true);
     expect(actor.canAccessAllTenants).toBe(false);
+  });
+
+  it("derives a company-wide scope for RSPP without explicit scope rows", async () => {
+    const repository = new FakeCoreIdentityRepository();
+    repository.scopes = [];
+    repository.user = makeUser({ role: "rspp" });
+
+    const actor = await makeService(repository).resolveActorContext(makeAuthenticatedUser({ role: "rspp" }));
+
+    expect(actor.organizationalScope.organizationIds).toEqual(["30"]);
+    expect(actor.organizationalScope.allSites).toBe(true);
+    expect(actor.organizationalScope.allContracts).toBe(true);
+    expect(actor.permissions).toContain(Permission.AdminIdentityManageOperational);
+    expect(actor.permissions).not.toContain(Permission.AdminIdentityManage);
   });
 
   it("derives a limited worker scope for non-management users without explicit scope rows", async () => {

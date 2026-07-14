@@ -32,37 +32,45 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/providers/trpc";
-
-const AUDIT_ROLES = new Set(["admin", "responsabile_sicurezza", "auditor"]);
-const IMPORT_ROLES = new Set(["admin", "responsabile_sicurezza", "operatore_sicurezza", "medico_competente", "referente_commessa", "auditor", "sola_lettura"]);
-const ADMIN_IDENTITY_ROLES = new Set(["admin"]);
+import { canAccessModule, type ModuleAccessId } from "@/lib/module-access";
 
 type SidebarItem = {
   path: string;
   label: string;
   icon: LucideIcon;
+  moduleId: ModuleAccessId;
   external?: boolean;
 };
 
 const navItems: SidebarItem[] = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/dipendenti", label: "Dipendenti", icon: Users },
-  { path: "/formazione", label: "Formazione", icon: GraduationCap },
-  { path: "/sorveglianza", label: "Sorveglianza Sanitaria", icon: Stethoscope },
-  { path: "/mansioni", label: "Mansioni", icon: Briefcase },
-  { path: "/scadenziario", label: "Scadenziario", icon: CalendarClock },
-  { path: "/segnalazioni", label: "Segnalazioni", icon: FileText },
-  { path: "/microclima", label: "Microclima", icon: Thermometer },
-  { path: "/documenti", label: "Documenti", icon: FileText },
-  { path: "/impostazioni", label: "Impostazioni", icon: Settings },
+  { path: "/", label: "Dashboard", icon: LayoutDashboard, moduleId: "dashboard" },
+  { path: "/dipendenti", label: "Dipendenti", icon: Users, moduleId: "workers" },
+  { path: "/formazione", label: "Formazione", icon: GraduationCap, moduleId: "training" },
+  { path: "/sorveglianza", label: "Sorveglianza Sanitaria", icon: Stethoscope, moduleId: "healthSurveillance" },
+  { path: "/mansioni", label: "Mansioni", icon: Briefcase, moduleId: "jobRoles" },
+  { path: "/scadenziario", label: "Scadenziario", icon: CalendarClock, moduleId: "deadlines" },
+  { path: "/segnalazioni", label: "Segnalazioni", icon: FileText, moduleId: "reports" },
+  { path: "/microclima", label: "Microclima", icon: Thermometer, moduleId: "microclima" },
+  { path: "/documenti", label: "Documenti", icon: FileText, moduleId: "documents" },
+  { path: "/impostazioni", label: "Impostazioni", icon: Settings, moduleId: "settings" },
+  { path: "/anagrafiche-utenti", label: "Anagrafiche e Utenti", icon: UserCog, moduleId: "adminIdentity" },
+  { path: "/audit", label: "Audit Log", icon: BookOpen, moduleId: "audit" },
+  { path: "/import-export", label: "Import / Export", icon: FileSpreadsheet, moduleId: "importExport" },
 ];
 
 const roleLabels: Record<string, { label: string; icon: LucideIcon; color: string }> = {
   admin: { label: "Admin", icon: Shield, color: "bg-red-100 text-red-700" },
+  rspp: { label: "RSPP", icon: ShieldCheck, color: "bg-blue-100 text-blue-700" },
+  aspp: { label: "ASPP", icon: ShieldCheck, color: "bg-sky-100 text-sky-700" },
   responsabile_sicurezza: { label: "Resp. Sicurezza", icon: ShieldCheck, color: "bg-blue-100 text-blue-700" },
   operatore_sicurezza: { label: "Operatore H\u0026S", icon: ClipboardCheck, color: "bg-green-100 text-green-700" },
+  capo_area: { label: "Capo Area", icon: Briefcase, color: "bg-indigo-100 text-indigo-700" },
+  capo_impianto: { label: "Capo Impianto", icon: Briefcase, color: "bg-cyan-100 text-cyan-700" },
   medico_competente: { label: "Medico Competente", icon: Stethoscope, color: "bg-teal-100 text-teal-700" },
   referente_commessa: { label: "Referente Commessa", icon: Briefcase, color: "bg-purple-100 text-purple-700" },
+  operatore: { label: "Operatore", icon: ClipboardCheck, color: "bg-slate-100 text-slate-700" },
+  dipendente: { label: "Dipendente", icon: Users, color: "bg-slate-100 text-slate-700" },
+  segnalatore: { label: "Segnalatore", icon: FileText, color: "bg-amber-100 text-amber-700" },
   auditor: { label: "Auditor", icon: BookOpen, color: "bg-orange-100 text-orange-700" },
   sola_lettura: { label: "Sola Lettura", icon: BookOpen, color: "bg-gray-100 text-gray-600" },
 };
@@ -72,17 +80,10 @@ function SidebarNav(props: Readonly<{ collapsed: boolean; onNavigate?: () => voi
   const location = useLocation();
   const { user } = useAuth();
   const { data: stats } = trpc.dashboard.stats.useQuery(undefined, { enabled: !!user });
-  const role = user?.role;
 
   const items = useMemo(() => {
-    const base = [
-      ...navItems,
-      ...(role && ADMIN_IDENTITY_ROLES.has(role) ? [{ path: "/anagrafiche-utenti", label: "Anagrafiche e Utenti", icon: UserCog }] : []),
-      ...(role && AUDIT_ROLES.has(role) ? [{ path: "/audit", label: "Audit Log", icon: BookOpen }] : []),
-      ...(role && IMPORT_ROLES.has(role) ? [{ path: "/import-export", label: "Import / Export", icon: FileSpreadsheet }] : []),
-    ];
-    return base;
-  }, [role]);
+    return navItems.filter((item) => canAccessModule(user, item.moduleId));
+  }, [user]);
 
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3">

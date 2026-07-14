@@ -8,6 +8,19 @@
 
 ## Aggiornamento operativo — 14 luglio 2026
 
+Chiusa la Milestone 2 RBAC menu, route e accessi:
+
+- aggiunta policy unica `module-access` per decidere visibilita' sidebar e accesso route;
+- collegato `auth.me` al Core Identity Context, con permission e scope backend nel payload utente;
+- protette tutte le route gestionali da accesso diretto URL tramite guard per modulo;
+- mantenuta `/segnalazioni/app` fuori da `AppLayout` e accessibile solo a `segnalatore`;
+- estesi i permessi Core Identity per Dashboard, Anagrafiche, HSE, Microclima, Sorveglianza, Documenti, Audit, Import/Export e Impostazioni;
+- aggiornata Anagrafiche e Utenti: Admin assegna tutti gli 11 ruoli, RSPP/ASPP/Sicurezza solo `operatore` e `dipendente`;
+- rafforzata la validazione backend su ruoli assegnabili, scope e modifica account privilegiati;
+- documentata la matrice in `docs/security/RBAC_MODULE_ACCESS.md`.
+
+Limiti residui: alcuni router legacy restano basati su middleware ruolo-gerarchia e dovranno essere migrati a permission/action policy; lo scope impianti/aree resta parziale finche' non sara' completato il modello fisico Core dedicato.
+
 Allineato il flusso post-login e la gestione ruoli Admin:
 
 - `segnalatore` viene indirizzato alla Safety App mobile `/#/segnalazioni/app`;

@@ -2,6 +2,16 @@
 
 ## 14 luglio 2026
 
+### Sicurezza — RBAC menu, route e accessi
+
+- Introdotta policy unica `module-access` per allineare sidebar, route guard e redirect post-login.
+- Collegato `auth.me` al Core Identity Context per restituire ruolo, scope e permission risolti dal backend.
+- Bloccato `segnalatore` fuori dal gestionale: accesso solo a `/#/segnalazioni/app`, senza `AppLayout` e senza sidebar.
+- Protette le route gestionali da accesso diretto URL con schermata di accesso negato o redirect dedicato.
+- Estesi i permessi Core Identity per Dashboard, Anagrafiche, HSE, Microclima, Sorveglianza, Documenti, Audit, Import/Export e Impostazioni.
+- Aperta Anagrafiche e Utenti a RSPP/ASPP/Sicurezza solo per gestione `operatore` e `dipendente`, con enforcement backend.
+- Documentata la matrice in `docs/security/RBAC_MODULE_ACCESS.md`.
+
 ### Admin — redirect e ruoli assegnabili
 
 - Allineato il redirect post-login: solo `segnalatore` entra in `/#/segnalazioni/app`, tutti gli altri ruoli entrano in `/#/`.

@@ -41,6 +41,8 @@ function createContext(role: Role) {
 describe("medical RBAC policy", () => {
   it.each<Role>([
     "admin",
+    "rspp",
+    "aspp",
     "responsabile_sicurezza",
     "operatore_sicurezza",
     "medico_competente",
@@ -64,6 +66,8 @@ describe("medical RBAC policy", () => {
   });
 
   it.each<Role>([
+    "rspp",
+    "aspp",
     "operatore_sicurezza",
     "referente_commessa",
     "auditor",

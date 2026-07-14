@@ -12,7 +12,12 @@ import {
   users,
   workers,
 } from "@db/schema";
-import { Role, type Role as CoreRole } from "@/modules/core/domain";
+import {
+  Permission,
+  Role,
+  type OrganizationalScope,
+  type Role as CoreRole,
+} from "@/modules/core/domain";
 import { createCoreIdentityService } from "./core/identity";
 import { createRouter, authedQuery, logAudit } from "./middleware";
 import { getDb } from "./queries/connection";
@@ -52,6 +57,25 @@ export const ADMIN_ROLE_OPTIONS = ADMIN_ROLE_VALUES.map((role) => ({
   value: role,
   label: ROLE_LABELS[role],
 }));
+
+const OPERATIONAL_IDENTITY_ROLE_VALUES = [
+  Role.Operatore,
+  Role.Dipendente,
+] as const satisfies readonly AdminAssignableRole[];
+
+const OPERATIONAL_IDENTITY_ROLE_OPTIONS = OPERATIONAL_IDENTITY_ROLE_VALUES.map((role) => ({
+  value: role,
+  label: ROLE_LABELS[role],
+}));
+
+type IdentityManagementActor = {
+  companyId: number;
+  userId: number;
+  role: CoreRole;
+  canManageAllRoles: boolean;
+  assignableRoles: readonly AdminAssignableRole[];
+  organizationalScope: OrganizationalScope;
+};
 
 function getRoleLabel(role: string): string {
   return ROLE_LABELS[role as AdminAssignableRole] ?? role;
@@ -180,18 +204,102 @@ function actorCompanyIdFromString(value: string): number {
   return companyId;
 }
 
-async function resolveAdminActor(ctx: TrpcContext): Promise<{ companyId: number; userId: number }> {
-  const actor = await createCoreIdentityService().resolveActorContext(ctx.user);
-  if (!actor.active || actor.role !== Role.Admin) {
+function isOperationalIdentityRole(role: string): role is (typeof OPERATIONAL_IDENTITY_ROLE_VALUES)[number] {
+  return OPERATIONAL_IDENTITY_ROLE_VALUES.includes(role as (typeof OPERATIONAL_IDENTITY_ROLE_VALUES)[number]);
+}
+
+function getRoleOptionsForActor(actor: IdentityManagementActor) {
+  return actor.canManageAllRoles ? ADMIN_ROLE_OPTIONS : OPERATIONAL_IDENTITY_ROLE_OPTIONS;
+}
+
+function assertAssignableRoleForActor(
+  actor: IdentityManagementActor,
+  role: AdminAssignableRole,
+): void {
+  if (!actor.assignableRoles.includes(role)) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "Funzione riservata agli amministratori",
+      message: "Ruolo non assegnabile dal profilo corrente",
+    });
+  }
+}
+
+function assertCanManageExistingAccountRole(
+  actor: IdentityManagementActor,
+  role: string,
+): void {
+  if (actor.canManageAllRoles || isOperationalIdentityRole(role)) return;
+
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message: "Account fuori dal perimetro gestibile dal profilo corrente",
+  });
+}
+
+function canViewAccountRole(actor: IdentityManagementActor, role: string): boolean {
+  return actor.canManageAllRoles || isOperationalIdentityRole(role);
+}
+
+function assertScopeInsideActorBoundary(
+  input: z.infer<typeof scopeInputSchema>,
+  actor: IdentityManagementActor,
+): void {
+  if (actor.canManageAllRoles) return;
+
+  const scope = actor.organizationalScope;
+  const companyId = String(input.companyId);
+  if (!scope.allOrganizations && !scope.organizationIds.includes(companyId)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Azienda fuori dal perimetro autorizzato",
+    });
+  }
+
+  const siteId = input.siteId ? String(input.siteId) : null;
+  if (!scope.allSites && (!siteId || !scope.siteIds.includes(siteId))) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Sede fuori dal perimetro autorizzato",
+    });
+  }
+
+  const contractId = input.contractId ? String(input.contractId) : null;
+  if (!scope.allContracts && contractId && !scope.contractIds.includes(contractId)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Appalto fuori dal perimetro autorizzato",
+    });
+  }
+}
+
+async function resolveIdentityManagementActor(ctx: TrpcContext): Promise<IdentityManagementActor> {
+  const actor = await createCoreIdentityService().resolveActorContext(ctx.user);
+  const permissions = new Set(actor.permissions);
+  const canManageAllRoles = permissions.has(Permission.AdminIdentityManage);
+  const canManageOperationalRoles = permissions.has(Permission.AdminIdentityManageOperational);
+
+  if (!actor.active || (!canManageAllRoles && !canManageOperationalRoles)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Funzione riservata ai profili autorizzati alla gestione identita",
+    });
+  }
+
+  const userId = Number(actor.userId);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Identita operatore non valida",
     });
   }
 
   return {
     companyId: actorCompanyIdFromString(actor.companyId),
-    userId: Number(actor.userId),
+    userId,
+    role: actor.role,
+    canManageAllRoles,
+    assignableRoles: canManageAllRoles ? ADMIN_ROLE_VALUES : OPERATIONAL_IDENTITY_ROLE_VALUES,
+    organizationalScope: actor.organizationalScope,
   };
 }
 
@@ -256,9 +364,10 @@ async function ensureJobRole(jobRoleId: number | null | undefined, createdBy: nu
   return created.id;
 }
 
-async function validateScope(input: z.infer<typeof scopeInputSchema>, actorCompanyId: number) {
+async function validateScope(input: z.infer<typeof scopeInputSchema>, actor: IdentityManagementActor) {
   const db = getDb();
-  await assertCompanyInActorScope(input.companyId, actorCompanyId);
+  await assertCompanyInActorScope(input.companyId, actor.companyId);
+  assertScopeInsideActorBoundary(input, actor);
 
   const siteId = input.siteId ?? null;
   const contractId = input.contractId ?? null;
@@ -270,7 +379,7 @@ async function validateScope(input: z.infer<typeof scopeInputSchema>, actorCompa
       .from(sites)
       .where(and(eq(sites.id, siteId), eq(sites.active, true)))
       .limit(1);
-    if (!site || site.companyId !== actorCompanyId) {
+    if (!site || site.companyId !== actor.companyId) {
       throw new TRPCError({ code: "FORBIDDEN", message: "Sede fuori perimetro" });
     }
   }
@@ -287,7 +396,7 @@ async function validateScope(input: z.infer<typeof scopeInputSchema>, actorCompa
     if (siteId && contract.siteId && contract.siteId !== siteId) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "Appalto non coerente con la sede" });
     }
-    if (!siteId && contract.clientCompanyId !== actorCompanyId) {
+    if (!siteId && contract.clientCompanyId !== actor.companyId) {
       throw new TRPCError({ code: "FORBIDDEN", message: "Appalto fuori perimetro" });
     }
   }
@@ -298,7 +407,7 @@ async function validateScope(input: z.infer<typeof scopeInputSchema>, actorCompa
       .from(microclimateSites)
       .where(and(eq(microclimateSites.id, plantId), eq(microclimateSites.active, true)))
       .limit(1);
-    if (!plant || plant.companyId !== actorCompanyId || (siteId && plant.siteId && plant.siteId !== siteId)) {
+    if (!plant || plant.companyId !== actor.companyId || (siteId && plant.siteId && plant.siteId !== siteId)) {
       throw new TRPCError({ code: "FORBIDDEN", message: "Impianto fuori perimetro" });
     }
   }
@@ -308,14 +417,14 @@ async function validateScope(input: z.infer<typeof scopeInputSchema>, actorCompa
 
 async function validatePersonOrganization(
   input: z.infer<typeof personInputSchema>,
-  actorCompanyId: number,
+  actor: IdentityManagementActor,
 ) {
-  await assertCompanyInActorScope(input.companyId, actorCompanyId);
+  await assertCompanyInActorScope(input.companyId, actor.companyId);
   return validateScope({
     companyId: input.companyId,
     siteId: input.siteId ?? null,
     contractId: input.contractId ?? null,
-  }, actorCompanyId);
+  }, actor);
 }
 
 async function assertNoDuplicateFiscalCode(
@@ -387,14 +496,13 @@ async function getActiveScopeByUserId(userId: number) {
 async function upsertUserScope(
   userId: number,
   input: z.infer<typeof scopeInputSchema>,
-  actorCompanyId: number,
-  actorUserId: number,
+  actor: IdentityManagementActor,
 ) {
   const db = getDb();
-  const scope = await validateScope(input, actorCompanyId);
+  const scope = await validateScope(input, actor);
   await db
     .update(userOrganizationScopes)
-    .set({ active: false, updatedAt: new Date(), updatedBy: actorUserId })
+    .set({ active: false, updatedAt: new Date(), updatedBy: actor.userId })
     .where(eq(userOrganizationScopes.userId, userId));
 
   const [existing] = await db
@@ -413,7 +521,7 @@ async function upsertUserScope(
   if (existing) {
     await db
       .update(userOrganizationScopes)
-      .set({ active: true, updatedAt: new Date(), updatedBy: actorUserId })
+      .set({ active: true, updatedAt: new Date(), updatedBy: actor.userId })
       .where(eq(userOrganizationScopes.id, existing.id));
   } else {
     await db.insert(userOrganizationScopes).values({
@@ -422,14 +530,14 @@ async function upsertUserScope(
       siteId: scope.siteId,
       contractId: scope.contractId,
       active: true,
-      createdBy: actorUserId,
+      createdBy: actor.userId,
     });
   }
 
   return scope;
 }
 
-async function makePersonDto(personId: number, actorCompanyId: number) {
+async function makePersonDto(personId: number, actor: IdentityManagementActor) {
   const db = getDb();
   const [row] = await db
     .select({
@@ -459,13 +567,19 @@ async function makePersonDto(personId: number, actorCompanyId: number) {
     .leftJoin(sites, eq(workers.siteId, sites.id))
     .leftJoin(contracts, eq(workers.contractId, contracts.id))
     .leftJoin(jobRoles, eq(workers.jobRoleId, jobRoles.id))
-    .where(and(eq(workers.id, personId), eq(workers.companyId, actorCompanyId), isNull(workers.deletedAt)))
+    .where(and(eq(workers.id, personId), eq(workers.companyId, actor.companyId), isNull(workers.deletedAt)))
     .limit(1);
   if (!row) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Persona non trovata" });
   }
 
   const account = await getAccountByEmail(row.email);
+  if (account && !canViewAccountRole(actor, account.role)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Account fuori dal perimetro gestibile dal profilo corrente",
+    });
+  }
   const scope = account ? await getActiveScopeByUserId(account.id) : null;
   const safeRow = omitFiscalCode(row);
   return {
@@ -493,9 +607,10 @@ async function enableOrUpdateAccount(
   role: AdminAssignableRole,
   active: boolean,
   scope: z.infer<typeof scopeInputSchema>,
-  actor: { companyId: number; userId: number },
+  actor: IdentityManagementActor,
 ) {
   assertAdminIdentityRole(role);
+  assertAssignableRoleForActor(actor, role);
   const db = getDb();
   const person = await getPersonForAdmin(personId, actor.companyId);
   const email = normalizeEmail(person.email);
@@ -508,6 +623,7 @@ async function enableOrUpdateAccount(
 
   let account = await getAccountByEmail(email);
   if (account) {
+    assertCanManageExistingAccountRole(actor, account.role);
     await db
       .update(users)
       .set({
@@ -535,18 +651,18 @@ async function enableOrUpdateAccount(
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Account non creato" });
   }
 
-  await upsertUserScope(account.id, scope, actor.companyId, actor.userId);
+  await upsertUserScope(account.id, scope, actor);
   return account.id;
 }
 
 export const adminIdentityRouter = createRouter({
   roles: authedQuery.query(async ({ ctx }) => {
-    await resolveAdminActor(ctx);
-    return ADMIN_ROLE_OPTIONS;
+    const actor = await resolveIdentityManagementActor(ctx);
+    return getRoleOptionsForActor(actor);
   }),
 
   options: authedQuery.query(async ({ ctx }) => {
-    const actor = await resolveAdminActor(ctx);
+    const actor = await resolveIdentityManagementActor(ctx);
     const db = getDb();
     const companyRows = await db
       .select({ id: companies.id, name: companies.name })
@@ -583,12 +699,12 @@ export const adminIdentityRouter = createRouter({
       contracts: contractRows,
       plants: plantRows,
       jobRoles: jobRoleRows,
-      roles: ADMIN_ROLE_OPTIONS,
+      roles: getRoleOptionsForActor(actor),
     };
   }),
 
   list: authedQuery.input(listInputSchema).query(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
+    const actor = await resolveIdentityManagementActor(ctx);
     const db = getDb();
     const filters = input ?? {};
     if (filters.companyId) await assertCompanyInActorScope(filters.companyId, actor.companyId);
@@ -657,6 +773,9 @@ export const adminIdentityRouter = createRouter({
         };
       })
       .filter((row) => {
+        if (row.account && !canViewAccountRole(actor, row.account.role)) {
+          return false;
+        }
         if (typeof filters.accountPresent === "boolean" && Boolean(row.account) !== filters.accountPresent) {
           return false;
         }
@@ -671,13 +790,13 @@ export const adminIdentityRouter = createRouter({
   }),
 
   detail: authedQuery.input(personIdInputSchema).query(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
-    return makePersonDto(input.personId, actor.companyId);
+    const actor = await resolveIdentityManagementActor(ctx);
+    return makePersonDto(input.personId, actor);
   }),
 
   createPerson: authedQuery.input(createPersonInputSchema).mutation(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
-    const organization = await validatePersonOrganization(input, actor.companyId);
+    const actor = await resolveIdentityManagementActor(ctx);
+    const organization = await validatePersonOrganization(input, actor);
     const fiscalCode = normalizeFiscalCode(input.fiscalCode);
     const email = normalizeEmail(input.email);
     const phone = normalizePhone(input.phone);
@@ -722,7 +841,8 @@ export const adminIdentityRouter = createRouter({
     });
 
     if (input.account?.enabled) {
-      const role = input.account.role ?? Role.Segnalatore;
+      const role = input.account.role ?? (actor.canManageAllRoles ? Role.Segnalatore : Role.Dipendente);
+      assertAssignableRoleForActor(actor, role);
       await enableOrUpdateAccount(
         created.id,
         role,
@@ -739,13 +859,13 @@ export const adminIdentityRouter = createRouter({
       });
     }
 
-    return makePersonDto(created.id, actor.companyId);
+    return makePersonDto(created.id, actor);
   }),
 
   updatePerson: authedQuery.input(updatePersonInputSchema).mutation(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
+    const actor = await resolveIdentityManagementActor(ctx);
     await getPersonForAdmin(input.id, actor.companyId);
-    const organization = await validatePersonOrganization(input, actor.companyId);
+    const organization = await validatePersonOrganization(input, actor);
     const fiscalCode = normalizeFiscalCode(input.fiscalCode);
     await assertNoDuplicateFiscalCode(fiscalCode, organization.companyId, input.id);
     const jobRoleId = await ensureJobRole(input.jobRoleId, actor.userId);
@@ -779,11 +899,11 @@ export const adminIdentityRouter = createRouter({
       reason: "Persona modificata",
     });
 
-    return makePersonDto(input.id, actor.companyId);
+    return makePersonDto(input.id, actor);
   }),
 
   enableAccount: authedQuery.input(enableAccountInputSchema).mutation(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
+    const actor = await resolveIdentityManagementActor(ctx);
     const accountId = await enableOrUpdateAccount(input.personId, input.role, input.active, input.scope, actor);
     await logAudit(ctx, "create", "users", {
       entityId: accountId,
@@ -791,16 +911,17 @@ export const adminIdentityRouter = createRouter({
       reason: "Account abilitato",
       newValue: getRoleLabel(input.role),
     });
-    return makePersonDto(input.personId, actor.companyId);
+    return makePersonDto(input.personId, actor);
   }),
 
   updateAccountStatus: authedQuery.input(updateAccountStatusInputSchema).mutation(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
+    const actor = await resolveIdentityManagementActor(ctx);
     const person = await getPersonForAdmin(input.personId, actor.companyId);
     const account = await getAccountByEmail(person.email);
     if (!account) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Account non trovato" });
     }
+    assertCanManageExistingAccountRole(actor, account.role);
     await getDb()
       .update(users)
       .set({ active: input.active, updatedAt: new Date() })
@@ -812,16 +933,18 @@ export const adminIdentityRouter = createRouter({
       reason: input.active ? "Account riattivato" : "Account bloccato",
       newValue: input.active ? "attivo" : "bloccato",
     });
-    return makePersonDto(input.personId, actor.companyId);
+    return makePersonDto(input.personId, actor);
   }),
 
   assignRole: authedQuery.input(assignRoleInputSchema).mutation(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
+    const actor = await resolveIdentityManagementActor(ctx);
+    assertAssignableRoleForActor(actor, input.role);
     const person = await getPersonForAdmin(input.personId, actor.companyId);
     const account = await getAccountByEmail(person.email);
     if (!account) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Account non trovato" });
     }
+    assertCanManageExistingAccountRole(actor, account.role);
     await getDb()
       .update(users)
       .set({ role: input.role, updatedAt: new Date() })
@@ -835,17 +958,18 @@ export const adminIdentityRouter = createRouter({
       oldValue: getRoleLabel(account.role),
       newValue: getRoleLabel(input.role),
     });
-    return makePersonDto(input.personId, actor.companyId);
+    return makePersonDto(input.personId, actor);
   }),
 
   updateOrganizationalScope: authedQuery.input(updateScopeInputSchema).mutation(async ({ input, ctx }) => {
-    const actor = await resolveAdminActor(ctx);
+    const actor = await resolveIdentityManagementActor(ctx);
     const person = await getPersonForAdmin(input.personId, actor.companyId);
     const account = await getAccountByEmail(person.email);
     if (!account) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Account non trovato" });
     }
-    const scope = await upsertUserScope(account.id, input.scope, actor.companyId, actor.userId);
+    assertCanManageExistingAccountRole(actor, account.role);
+    const scope = await upsertUserScope(account.id, input.scope, actor);
     await logAudit(ctx, "update", "user_organization_scopes", {
       entityId: account.id,
       entityName: `${person.firstName} ${person.lastName}`,
@@ -857,6 +981,6 @@ export const adminIdentityRouter = createRouter({
         contractId: scope.contractId,
       }),
     });
-    return makePersonDto(input.personId, actor.companyId);
+    return makePersonDto(input.personId, actor);
   }),
 });

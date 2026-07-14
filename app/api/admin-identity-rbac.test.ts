@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { User } from "@db/schema";
-import { Role } from "@/modules/core/domain";
+import { Permission, Role, type Role as CoreRole } from "@/modules/core/domain";
 
 const resolveActorContext = vi.fn();
 
@@ -39,17 +39,95 @@ function makeCaller(user = makeUser()) {
   });
 }
 
+function makeActor(overrides: {
+  role?: CoreRole;
+  permissions?: string[];
+} = {}) {
+  return {
+    active: true,
+    role: overrides.role ?? Role.Admin,
+    companyId: "2",
+    userId: "10",
+    permissions: overrides.permissions ?? [
+      Permission.AdminIdentityView,
+      Permission.AdminIdentityManage,
+    ],
+    organizationalScope: {
+      tenantId: "2",
+      organizationIds: ["2"],
+      siteIds: [],
+      contractIds: [],
+      plantIds: [],
+      areaIds: [],
+      allOrganizations: false,
+      allSites: true,
+      allContracts: true,
+      allPlants: true,
+      allAreas: true,
+    },
+  };
+}
+
 describe("Admin identity RBAC", () => {
-  it("blocks non Admin users from assigning roles", async () => {
-    resolveActorContext.mockResolvedValueOnce({
-      active: true,
+  beforeEach(() => {
+    resolveActorContext.mockReset();
+  });
+
+  it("blocks users without identity management permission from assigning roles", async () => {
+    resolveActorContext.mockResolvedValueOnce(makeActor({
       role: Role.Segnalatore,
-      companyId: "2",
-      userId: "10",
-    });
+      permissions: [],
+    }));
 
     await expect(
       makeCaller().assignRole({ personId: 1, role: "segnalatore" }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("exposes all assignable roles to Admin", async () => {
+    resolveActorContext.mockResolvedValueOnce(makeActor());
+
+    await expect(makeCaller(makeUser({ role: "admin" })).roles()).resolves.toEqual([
+      { value: "admin", label: "Admin" },
+      { value: "rspp", label: "RSPP" },
+      { value: "aspp", label: "ASPP" },
+      { value: "responsabile_sicurezza", label: "Responsabile Sicurezza" },
+      { value: "operatore_sicurezza", label: "Operatore Sicurezza" },
+      { value: "capo_area", label: "Capo Area" },
+      { value: "capo_impianto", label: "Capo Impianto" },
+      { value: "referente_commessa", label: "Referente Commessa" },
+      { value: "operatore", label: "Operatore" },
+      { value: "dipendente", label: "Dipendente" },
+      { value: "segnalatore", label: "Segnalatore" },
+    ]);
+  });
+
+  it("limits RSPP identity management to operator and employee roles", async () => {
+    resolveActorContext.mockResolvedValueOnce(makeActor({
+      role: Role.Rspp,
+      permissions: [
+        Permission.AdminIdentityView,
+        Permission.AdminIdentityManageOperational,
+      ],
+    }));
+
+    await expect(makeCaller(makeUser({ role: "rspp" })).roles()).resolves.toEqual([
+      { value: "operatore", label: "Operatore" },
+      { value: "dipendente", label: "Dipendente" },
+    ]);
+  });
+
+  it("blocks RSPP from assigning privileged roles before persistence", async () => {
+    resolveActorContext.mockResolvedValueOnce(makeActor({
+      role: Role.Rspp,
+      permissions: [
+        Permission.AdminIdentityView,
+        Permission.AdminIdentityManageOperational,
+      ],
+    }));
+
+    await expect(
+      makeCaller(makeUser({ role: "rspp" })).assignRole({ personId: 1, role: "admin" }),
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

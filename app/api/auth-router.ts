@@ -2,9 +2,21 @@ import * as cookie from "cookie";
 import { Session } from "@contracts/constants";
 import { getSessionCookieOptions } from "./lib/cookies";
 import { createRouter, authedQuery } from "./middleware";
+import { createCoreIdentityService } from "./core/identity";
 
 export const authRouter = createRouter({
-  me: authedQuery.query((opts) => opts.ctx.user),
+  me: authedQuery.query(async (opts) => {
+    const actor = await createCoreIdentityService().resolveActorContext(opts.ctx.user);
+    return {
+      ...opts.ctx.user,
+      tenantId: actor.tenantId,
+      companyId: actor.companyId,
+      personId: actor.personId,
+      permissions: actor.permissions,
+      organizationalScope: actor.organizationalScope,
+      scopes: actor.scopes,
+    };
+  }),
   logout: authedQuery.mutation(async ({ ctx }) => {
     const opts = getSessionCookieOptions(ctx.req.headers);
     for (const cookieName of [

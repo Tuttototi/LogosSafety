@@ -5,6 +5,7 @@ import {
   getProtectedRouteDecision,
   getPublicRouteDecision,
 } from "@/lib/auth-routing";
+import { Permission } from "@/modules/core/domain";
 
 describe("auth route guard decisions", () => {
   it("redirects root access without auth to login", () => {
@@ -33,6 +34,44 @@ describe("auth route guard decisions", () => {
       isAuthenticated: true,
       isLoading: false,
     })).toEqual({ state: "allow" });
+  });
+
+  it("allows protected module content only with the required backend permission", () => {
+    expect(getProtectedRouteDecision({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "admin",
+      permissions: [Permission.DashboardView],
+      moduleId: "dashboard",
+    })).toEqual({ state: "allow" });
+
+    expect(getProtectedRouteDecision({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "dipendente",
+      permissions: [Permission.DashboardView],
+      moduleId: "adminIdentity",
+    })).toEqual({ state: "forbidden" });
+  });
+
+  it("redirects segnalatore away from every management route", () => {
+    expect(getProtectedRouteDecision({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "segnalatore",
+      permissions: [Permission.SegnalazioniCreate],
+      moduleId: "dashboard",
+    })).toEqual({ state: "redirect", to: "/segnalazioni/app" });
+  });
+
+  it("blocks non segnalatore direct access to the Safety App route", () => {
+    expect(getProtectedRouteDecision({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "admin",
+      permissions: [Permission.DashboardView],
+      moduleId: "reportsSafetyApp",
+    })).toEqual({ state: "forbidden" });
   });
 
   it("keeps login public for unauthenticated users", () => {

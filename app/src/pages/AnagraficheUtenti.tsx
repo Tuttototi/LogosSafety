@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { canAccessModule } from "@/lib/module-access";
 import { trpc } from "@/providers/trpc";
 import { ShieldAlert, UserPlus, UsersRound } from "lucide-react";
 
@@ -116,19 +117,19 @@ export default function AnagraficheUtenti() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = user?.role === "admin";
-  const optionsQuery = trpc.adminIdentity.options.useQuery(undefined, { enabled: isAdmin });
+  const canManageIdentities = canAccessModule(user, "adminIdentity");
+  const optionsQuery = trpc.adminIdentity.options.useQuery(undefined, { enabled: canManageIdentities });
   const peopleQuery = trpc.adminIdentity.list.useQuery({
     search: search || undefined,
     role: roleFilter === "all" ? undefined : roleFilter,
     personActive: toBooleanFilter(personActive),
     accountPresent: toBooleanFilter(accountPresent),
     accountActive: toBooleanFilter(accountActive),
-  }, { enabled: isAdmin });
+  }, { enabled: canManageIdentities });
 
   const selectedQuery = trpc.adminIdentity.detail.useQuery(
     { personId: selectedPersonId ?? 0 },
-    { enabled: isAdmin && Boolean(selectedPersonId) },
+    { enabled: canManageIdentities && Boolean(selectedPersonId) },
   );
 
   const createMutation = trpc.adminIdentity.createPerson.useMutation({
@@ -192,6 +193,10 @@ export default function AnagraficheUtenti() {
 
   const options = optionsQuery.data;
   const selected = selectedQuery.data ?? null;
+  const availableRoles = useMemo(() => options?.roles ?? [], [options?.roles]);
+  const effectiveAccountRole = availableRoles.some((role) => role.value === form.accountRole)
+    ? form.accountRole
+    : availableRoles[0]?.value ?? form.accountRole;
   const selectedCompanyId = form.companyId || (options?.companies[0]?.id ? String(options.companies[0].id) : "");
 
   const filteredSites = useMemo(() => {
@@ -239,7 +244,7 @@ export default function AnagraficheUtenti() {
       active: form.active,
       account: {
         enabled: form.accountEnabled,
-        role: form.accountRole,
+        role: effectiveAccountRole,
         active: form.accountActive,
         scope: { companyId, siteId, contractId },
       },
@@ -250,7 +255,7 @@ export default function AnagraficheUtenti() {
     if (!selected) return;
     enableAccountMutation.mutate({
       personId: selected.id,
-      role: isAdminRole(selected.account?.role) ? selected.account.role : form.accountRole,
+      role: isAdminRole(selected.account?.role) ? selected.account.role : effectiveAccountRole,
       active: true,
       scope: {
         companyId: selected.companyId,
@@ -286,14 +291,14 @@ export default function AnagraficheUtenti() {
     updateStatusMutation.mutate({ personId: selected.id, active: nextStatus });
   }
 
-  if (!isAdmin) {
+  if (!canManageIdentities) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="max-w-md rounded-lg border border-red-200 bg-white p-6 text-center shadow-sm">
           <ShieldAlert className="mx-auto h-10 w-10 text-red-600" />
           <h1 className="mt-4 text-lg font-semibold text-slate-900">Accesso non autorizzato</h1>
           <p className="mt-2 text-sm text-slate-600">
-            La gestione Anagrafiche e Utenti e riservata agli amministratori.
+            La gestione Anagrafiche e Utenti e riservata ai profili autorizzati.
           </p>
         </div>
       </div>
@@ -314,7 +319,7 @@ export default function AnagraficheUtenti() {
         </div>
         <Badge variant="outline" className="w-fit border-red-200 bg-red-50 text-red-700">
           <UsersRound className="mr-1 h-3.5 w-3.5" />
-          Solo Admin
+          Accesso RBAC
         </Badge>
       </div>
 
@@ -533,7 +538,7 @@ export default function AnagraficheUtenti() {
                 {form.accountEnabled && (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field label="Ruolo">
-                      <Select value={form.accountRole} onValueChange={(value) => setForm({ ...form, accountRole: value as AdminRole })}>
+                      <Select value={effectiveAccountRole} onValueChange={(value) => setForm({ ...form, accountRole: value as AdminRole })}>
                         <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {options?.roles.map((role) => (

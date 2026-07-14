@@ -36,13 +36,20 @@ export const anyAuthedQuery = t.procedure.use(requireAuth);
 
 // ─── Role-based middleware ──────────────────────────────────────
 const ROLES_HIERARCHY: Record<string, number> = {
-  admin: 7,
-  responsabile_sicurezza: 6,
-  operatore_sicurezza: 5,
-  medico_competente: 4,
+  admin: 10,
+  rspp: 8,
+  responsabile_sicurezza: 8,
+  aspp: 7,
+  operatore_sicurezza: 6,
+  medico_competente: 5,
+  capo_area: 4,
+  capo_impianto: 4,
   referente_commessa: 3,
-  auditor: 2,
+  operatore: 2,
+  dipendente: 1,
+  auditor: 1,
   sola_lettura: 1,
+  segnalatore: 0,
 };
 
 function requireMinRole(minRole: string) {

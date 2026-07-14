@@ -21,6 +21,7 @@ import {
   getProtectedRouteDecision,
   getPublicRouteDecision,
 } from "@/lib/auth-routing";
+import type { ModuleAccessId } from "@/lib/module-access";
 
 function LayoutWrapper({ children }: Readonly<{ children: React.ReactNode }>) {
   return <AppLayout>{children}</AppLayout>;
@@ -36,12 +37,41 @@ function AuthLoadingScreen() {
   );
 }
 
+function AccessDeniedScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+      <div className="max-w-md rounded-xl border border-red-200 bg-white px-6 py-5 text-center shadow-sm">
+        <p className="text-sm font-semibold uppercase tracking-wide text-red-700">
+          Accesso negato
+        </p>
+        <h1 className="mt-2 text-lg font-semibold text-slate-900">
+          Funzione non autorizzata
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Il tuo ruolo non dispone dei permessi necessari per accedere a questa sezione.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ProtectedRoute({
   children,
   withLayout = true,
-}: Readonly<{ children: React.ReactNode; withLayout?: boolean }>) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const decision = getProtectedRouteDecision({ isAuthenticated, isLoading });
+  moduleId,
+}: Readonly<{
+  children: React.ReactNode;
+  withLayout?: boolean;
+  moduleId: ModuleAccessId;
+}>) {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const decision = getProtectedRouteDecision({
+    isAuthenticated,
+    isLoading,
+    role: user?.role,
+    permissions: user?.permissions,
+    moduleId,
+  });
 
   if (decision.state === "loading") {
     return <AuthLoadingScreen />;
@@ -49,6 +79,16 @@ function ProtectedRoute({
 
   if (decision.state === "redirect") {
     return <Navigate to={decision.to} replace />;
+  }
+
+  if (decision.state === "forbidden") {
+    return withLayout ? (
+      <LayoutWrapper>
+        <AccessDeniedScreen />
+      </LayoutWrapper>
+    ) : (
+      <AccessDeniedScreen />
+    );
   }
 
   if (!withLayout) {
@@ -83,7 +123,7 @@ export default function App() {
       <Route
         path="/"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="dashboard">
             <Dashboard />
           </ProtectedRoute>
         }
@@ -91,7 +131,7 @@ export default function App() {
       <Route
         path="/anagrafiche-utenti"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="adminIdentity">
             <AnagraficheUtenti />
           </ProtectedRoute>
         }
@@ -99,7 +139,7 @@ export default function App() {
       <Route
         path="/dipendenti"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="workers">
             <Dipendenti />
           </ProtectedRoute>
         }
@@ -107,7 +147,7 @@ export default function App() {
       <Route
         path="/formazione"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="training">
             <Formazione />
           </ProtectedRoute>
         }
@@ -115,7 +155,7 @@ export default function App() {
       <Route
         path="/sorveglianza"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="healthSurveillance">
             <Sorveglianza />
           </ProtectedRoute>
         }
@@ -123,7 +163,7 @@ export default function App() {
       <Route
         path="/mansioni"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="jobRoles">
             <Mansioni />
           </ProtectedRoute>
         }
@@ -131,7 +171,7 @@ export default function App() {
       <Route
         path="/scadenziario"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="deadlines">
             <Scadenziario />
           </ProtectedRoute>
         }
@@ -139,7 +179,7 @@ export default function App() {
       <Route
         path="/segnalazioni"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="reports">
             <Segnalazioni />
           </ProtectedRoute>
         }
@@ -147,7 +187,7 @@ export default function App() {
       <Route
         path="/segnalazioni/app"
         element={
-          <ProtectedRoute withLayout={false}>
+          <ProtectedRoute moduleId="reportsSafetyApp" withLayout={false}>
             <SegnalatoreApp variant="page" />
           </ProtectedRoute>
         }
@@ -155,7 +195,7 @@ export default function App() {
       <Route
         path="/documenti"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="documents">
             <Documenti />
           </ProtectedRoute>
         }
@@ -163,7 +203,7 @@ export default function App() {
       <Route
         path="/impostazioni"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="settings">
             <Impostazioni />
           </ProtectedRoute>
         }
@@ -171,7 +211,7 @@ export default function App() {
       <Route
         path="/audit"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="audit">
             <AuditLog />
           </ProtectedRoute>
         }
@@ -179,7 +219,7 @@ export default function App() {
       <Route
         path="/import-export"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="importExport">
             <ImportExport />
           </ProtectedRoute>
         }
@@ -187,12 +227,19 @@ export default function App() {
       <Route
         path="/microclima"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute moduleId="microclima">
             <Microclima />
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute moduleId="dashboard">
+            <NotFound />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

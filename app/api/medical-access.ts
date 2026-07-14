@@ -4,6 +4,8 @@ export type MedicalRole = User["role"];
 
 export const OPERATIONAL_MEDICAL_ROLES = [
   "admin",
+  "rspp",
+  "aspp",
   "responsabile_sicurezza",
   "operatore_sicurezza",
   "medico_competente",
